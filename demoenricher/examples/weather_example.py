@@ -34,15 +34,16 @@ def dump_csv(data, filepath):
     data.to_csv(filepath, sep='\t', index=False)
 
 
-def encode_feature_name(base_datetime, offset_datetime, agg_level, param):
+def encode_feature_name(base_datetime, offset_datetime, fc_or_ac, agg_level, param):
     """ 
     Each weather feature has a unique name which is encoded using the following schema:
 
-        [WEATHER][AGG_LEVEL][OFFSET][PARAM]
+        [WEATHER][FC/AC][AGG_LEVEL][OFFSET][PARAM]
 
         Where:
 
             WEATHER (str): fixed prefix used to distinguish weather feature type from others (i.e. NEWS)
+            FC/AC (FC or AC): constant indicating weather forecast (FC) or actual weather (AC) 
             AGG_LEVEL (DAY, HOUR or WEEK): aggregation level
             OFFSET (sign + 2 digits): offset given the aggregation level ( 0 in encoded as +00)
             PARAM (str, variable length): ECMWF measurement parameter value (i.e. 2t for Temperature, tcc for Total cloud cover, ...)
@@ -51,16 +52,23 @@ def encode_feature_name(base_datetime, offset_datetime, agg_level, param):
 
             Current date-time is 2017-7-10 12:00
 
-            WEATHERHOUR+002t - temperature on 2017-7-10 at 12:00
-            WEATHERHOUR+062t - temperature on 2017-7-10 at 18:00 
-            WEATHERHOUR-062t - temperature on 2017-7-10 at 06:00 
-            WEATHERHOUR+302t - temperature on 2017-7-11 at 18:00 
+            WEATHERACHOUR+002t - actual temperature on 2017-7-10 at 12:00
+            WEATHERACHOUR-062t - actual temperature on 2017-7-10 at 06:00 
+            WEATHERACHOUR+062t - actual temperature on 2017-7-10 at 18:00 
+            WEATHERACHOUR+302t - actual temperature on 2017-7-11 at 18:00 
 
-            WEATHERDAY+002t - average temperature on 2017-7-10
-            WEATHERDAY+042t - average temperature on 2017-7-14
+            WEATHERFCHOUR+062t - forecasted temperature for 2017-7-10 at 18:00 
+            WEATHERFCHOUR+302t - forecasted temperature for 2017-7-11 at 18:00 
 
-            WEATHERWEEK-012t - average temperature from previous week (since 2017-7-10 is monday, this is the week from 2017-7-3 to 2017-7-9)
+            WEATHERACDAY+002t - actual daily average temperature on 2017-7-10
+            WEATHERACDAY+042t - actual daily average temperature on 2017-7-14
+
+            WEATHERFCDAY+002t - forecasted daily average temperature for 2017-7-10
+            WEATHERFCDAY+042t - forecasted daily average temperature for 2017-7-14
+
+            WEATHERACWEEK-012t - actual temperature from previous week (since 2017-7-10 is monday, this is the week from 2017-7-3 to 2017-7-9)
     """
+    assert fc_or_ac in ['fc', 'ac', 'FC', 'AC']
     assert agg_level in ['hour', 'day', 'week']
 
     if agg_level == 'hour':
@@ -71,8 +79,8 @@ def encode_feature_name(base_datetime, offset_datetime, agg_level, param):
         diff = int(offset_datetime.date().isocalendar()[
                    1] - base_datetime.date().isocalendar()[1])
 
-    feature_name = 'WEATHER%s%s%02d%s' % (
-        agg_level.upper(), '+' if diff >= 0 else '-', abs(diff), param)
+    feature_name = 'WEATHER%s%s%s%02d%s' % (
+        fc_or_ac.upper(), agg_level.upper(), '+' if diff >= 0 else '-', abs(diff), param)
     return feature_name
 
 
@@ -99,9 +107,9 @@ def enrich_weather(data, weather_file):
         """
             Each entry in the sales data is enriched with the following features (on the country level):
 
-            WEATHERDAY+002t: actual mean temperature on a given day
-            WEATHERDAY+00tp: actual mean total precipitation on a given day
-            WEATHERDAY+00tcc: actual mean total cloud cover on a given day
+            WEATHERACDAY+002t: actual mean temperature on a given day
+            WEATHERACDAY+00tcc: actual mean total cloud cover on a given day
+            WEATHERACDAY+00tp: actual mean total precipitation on a given day
 
             And simillarly for an actual weather from two days ago, a week ago and a forecast for the next two days.
         """
@@ -115,12 +123,10 @@ def enrich_weather(data, weather_file):
             from_date=curr_date, to_date=curr_date, aggtime='day', aggloc='country')
 
         for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tp', 'tcc']:
+            if param in ['2t', 'tcc', 'tp']:
                 feature_name = encode_feature_name(
                     datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0],
-                    'day',
-                    param)
+                    datetime_range[0], 'ac', 'day', param)
                 weather_features[feature_name] = values[0]
 
         # actual weather from two days ago
@@ -128,25 +134,10 @@ def enrich_weather(data, weather_file):
             from_date=curr_date - datetime.timedelta(days=2), to_date=curr_date - datetime.timedelta(days=1), aggtime='day', aggloc='country')
 
         for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tp', 'tcc']:
+            if param in ['2t', 'tcc', 'tp']:
                 feature_name = encode_feature_name(
                     datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0],
-                    'day',
-                    param)
-                weather_features[feature_name] = values[0]
-
-        # forecast for the next two days
-        weather_result = we.get_forecast(base_date=curr_date,
-                                         from_date=curr_date + datetime.timedelta(days=1), to_date=curr_date + datetime.timedelta(days=2), aggtime='day', aggloc='country')
-
-        for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tp', 'tcc']:
-                feature_name = encode_feature_name(
-                    datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0],
-                    'day',
-                    param)
+                    datetime_range[0], 'ac', 'day', param)
                 weather_features[feature_name] = values[0]
 
         # actual weather from the previous week
@@ -156,12 +147,21 @@ def enrich_weather(data, weather_file):
             to_date=curr_date + datetime.timedelta(days=-offset_days), aggtime='week', aggloc='country')
 
         for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tp', 'tcc']:
+            if param in ['2t', 'tcc', 'tp']:
                 feature_name = encode_feature_name(
                     datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0],
-                    'week',
-                    param)
+                    datetime_range[0], 'ac', 'week', param)
+                weather_features[feature_name] = values[0]
+
+        # forecast for the next two days
+        weather_result = we.get_forecast(base_date=curr_date,
+                                         from_date=curr_date + datetime.timedelta(days=1), to_date=curr_date + datetime.timedelta(days=2), aggtime='day', aggloc='country')
+
+        for datetime_range, param, values in weather_result:
+            if param in ['2t', 'tcc', 'tp']:
+                feature_name = encode_feature_name(
+                    datetime.datetime.combine(curr_date, datetime.time(0)),
+                    datetime_range[0], 'fc', 'day', param)
                 weather_features[feature_name] = values[0]
 
         all_features.append(weather_features)
