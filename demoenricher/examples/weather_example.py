@@ -84,6 +84,24 @@ def encode_feature_name(base_datetime, offset_datetime, fc_or_ac, agg_level, par
     return feature_name
 
 
+def generate_features(weather_data, curr_date, fc_or_ac, agg_level):
+    weather_features = dict()
+
+    # current (reference) datetime
+    curr_datetime = datetime.datetime.combine(curr_date, datetime.time(0))
+
+    for param in ['2t', 'tcc', 'tp']:
+        param_data = weather_data[weather_data['shortName'] == param].iloc[0]
+
+        # generate feature name
+        feature_name = encode_feature_name(
+            curr_datetime, param_data['validityDateTime'], fc_or_ac, agg_level, param)
+
+        # add feature to collection
+        weather_features[feature_name] = param_data['values'][0]
+
+    return weather_features
+
 def enrich_weather(data, weather_file):
     """
     Each weather feature corresponds to an additional column in the data frame.
@@ -122,23 +140,13 @@ def enrich_weather(data, weather_file):
         weather_result = we.get_actual(
             from_date=curr_date, to_date=curr_date, aggtime='day', aggloc='country')
 
-        for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tcc', 'tp']:
-                feature_name = encode_feature_name(
-                    datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0], 'ac', 'day', param)
-                weather_features[feature_name] = values[0]
+        weather_features.update(generate_features(weather_result, curr_date, 'ac', 'day'))
 
         # actual weather from two days ago
         weather_result = we.get_actual(
             from_date=curr_date - datetime.timedelta(days=2), to_date=curr_date - datetime.timedelta(days=1), aggtime='day', aggloc='country')
 
-        for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tcc', 'tp']:
-                feature_name = encode_feature_name(
-                    datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0], 'ac', 'day', param)
-                weather_features[feature_name] = values[0]
+        weather_features.update(generate_features(weather_result, curr_date, 'ac', 'day'))
 
         # actual weather from the previous week
         offset_days = curr_date.isocalendar()[2]  # day of current week
@@ -146,24 +154,15 @@ def enrich_weather(data, weather_file):
             from_date=curr_date + datetime.timedelta(days=-(offset_days + 6)),
             to_date=curr_date + datetime.timedelta(days=-offset_days), aggtime='week', aggloc='country')
 
-        for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tcc', 'tp']:
-                feature_name = encode_feature_name(
-                    datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0], 'ac', 'week', param)
-                weather_features[feature_name] = values[0]
+        weather_features.update(generate_features(weather_result, curr_date, 'ac', 'week'))
 
         # forecast for the next two days
         weather_result = we.get_forecast(base_date=curr_date,
                                          from_date=curr_date + datetime.timedelta(days=1), to_date=curr_date + datetime.timedelta(days=2), aggtime='day', aggloc='country')
 
-        for datetime_range, param, values in weather_result:
-            if param in ['2t', 'tcc', 'tp']:
-                feature_name = encode_feature_name(
-                    datetime.datetime.combine(curr_date, datetime.time(0)),
-                    datetime_range[0], 'fc', 'day', param)
-                weather_features[feature_name] = values[0]
+        weather_features.update(generate_features(weather_result, curr_date, 'fc', 'day'))
 
+        # add features for current row
         all_features.append(weather_features)
 
     # add weather features
