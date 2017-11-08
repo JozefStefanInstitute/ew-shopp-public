@@ -91,14 +91,17 @@ def generate_features(weather_data, curr_date, fc_or_ac, agg_level):
     curr_datetime = datetime.datetime.combine(curr_date, datetime.time(0))
 
     for param in ['2t', 'tcc', 'tp']:
-        param_data = weather_data[weather_data['shortName'] == param].iloc[0]
+        param_data = weather_data[weather_data['shortName'] == param]
 
-        # generate feature name
-        feature_name = encode_feature_name(
-            curr_datetime, param_data['validityDateTime'], fc_or_ac, agg_level, param)
+        for row in param_data.iterrows():
+            measure = row[1]
+        
+            # generate feature name
+            feature_name = encode_feature_name(
+                curr_datetime, measure['validityDateTime'], fc_or_ac, agg_level, param)
 
-        # add feature to collection
-        weather_features[feature_name] = param_data['values'][0]
+            # add feature to collection
+            weather_features[feature_name] = measure['values'][0]
 
     return weather_features
 
