@@ -1,0 +1,16 @@
+{
+    "type": "queryEvents",
+    "query": {
+        "$query": {
+            "conceptUri": {
+                "$or": [
+                    "http://en.wikipedia.org/wiki/Apple_Inc.",
+                    "http://en.wikipedia.org/wiki/Samsung",
+                    "http://en.wikipedia.org/wiki/Huawei"
+                ]
+            },
+            "dateStart": "2015-01-01",
+            "dateEnd": "2017-12-01"
+        }
+    }
+}
