@@ -1,0 +1,10 @@
+{
+	"type": "queryEvents",
+	"query": {
+		"$query": {
+			"categoryUri": "dmoz/Sports",
+			"dateStart": "2015-01-01",
+			"dateEnd": "2017-12-01"
+		}
+	}
+}
