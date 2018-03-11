@@ -1,0 +1,12 @@
+{
+    "sales": {
+        "dir": "data/sales/",
+        "filename": "CellPhones.csv",
+        "dbPath": "./db/"
+    },
+    "weather":{
+        "dir": "data/weather/",
+        "filename": "weather.tsv",
+        "dbPath": "./dbWeather/"
+    }
+}
