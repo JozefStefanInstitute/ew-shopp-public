@@ -45,3 +45,11 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# javascript
+node_modules/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# QMiner
+db/
