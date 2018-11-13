@@ -1,1 +1,0 @@
-npm install qminer minimist regression express
