@@ -1,0 +1,70 @@
+{
+    "destination": {
+        "type": "QminerDB",
+        "db_path": "./dbExample/",
+        "mode": "open"
+    },
+    "source": {
+        "type": "MariaDB",
+        "host": "localhost",
+        "database": "example",
+        "user": "root",
+        "password": "root"
+    },
+    "queries": [
+        {
+            "name": "Weather predictions",
+            "use_query": true,
+            "use_schema": false,
+            "query_src": {
+                "query": "SELECT * FROM predictions WHERE EventID = 1"
+            },
+            "mapping": [
+                {
+                    "name": "WeatherPredictions",
+                    "fields": {
+                        "EventID": "eventID",
+                        "Prediction": "prediction",
+                        "Timestamp": "timestamp",
+                        "Weather": "weather"
+                    }
+                }
+            ],
+            "schema": [
+                {
+                    "name": "WeatherPredictions",
+                    "fields": [
+                        {
+                            "name": "eventID",
+                            "type": "string"
+                        }, {
+                            "name": "prediction",
+                            "type": "int"
+                        }, {
+                            "name": "timestamp",
+                            "type": "datetime"
+                        }, {
+                            "name": "weather",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }
+                    ],
+                    "joins": [],
+                    "keys": [
+                        {
+                            "field": "timestamp",
+                            "type": "linear"
+                        }, {
+                            "field": "eventID",
+                            "type": "value"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

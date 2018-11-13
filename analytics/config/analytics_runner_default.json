@@ -1,0 +1,14 @@
+{
+    "use_case": "Default",
+    "models_configs_dir": "../data/conf/models/",
+    "models_dst_dir": "../data/models/",
+    "transformations": {
+        "weather": "../data/conf/transformations/weather_transformation.json",
+        "other": [
+            "../data/conf/transformations/deeplinks_transformation.json",
+            "../data/conf/transformations/pageviews_transformation.json",
+            "../data/conf/transformations/sales_transformation.json",
+            "../data/conf/transformations/categories_transformation.json"
+        ]
+    }
+}

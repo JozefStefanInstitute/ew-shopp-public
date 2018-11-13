@@ -1,0 +1,411 @@
+{
+    "source": {
+        "type": "Csv",
+        "dir": "../data/raw/ceneje/sales_forecast/",
+        "custom_fn_path": "./conf/ce_csv_custom_fn"
+    },
+    "destination": {
+        "type": "QminerDB",
+        "db_path": "../data/dbs/ceBbDb/",
+        "mode": "extend"
+    },
+    "queries": [
+        {
+            "name": "CE Schema",
+            "use_query": false,
+            "use_schema": true,
+            "schema": [
+                {
+                    "name": "CEProducts",
+                    "fields": [
+                        {
+                            "name": "IdProduct",
+                            "type": "string",
+                            "shortstring": true,
+                            "primary": true
+                        }, {
+                            "name": "ProdType",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "ProdName",
+                            "type": "string",
+                            "shortstring": true,
+                            "null": true
+                        }, {
+                            "name": "IdBrand",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "Brand",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "IdL0",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "L0",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "IdL1",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "L1",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "IdL2",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "L2",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "IdL3",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "L3",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "EANs",
+                            "type": "string_v",
+                            "shortstring": true,
+                            "null": true
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "wasViewed",
+                            "type": "index",
+                            "store": "CEPageviews",
+                            "inverse": "viewedProduct"
+                        }, {
+                            "name": "wasClicked",
+                            "type": "index",
+                            "store": "CEClicks",
+                            "inverse": "clickedProduct"
+                        }, {
+                            "name": "hadPrice",
+                            "type": "index",
+                            "store": "CEPrices",
+                            "inverse": "ofProduct"
+                        }, {
+                            "name": "hadPriceInterval",
+                            "type": "index",
+                            "store": "CEPricesIntervals",
+                            "inverse": "ofProduct"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "IdProduct",
+                            "type": "value"
+                        }, {
+                            "field": "ProdType",
+                            "type": "value"
+                        }
+                    ]
+                }, {
+                    "name": "CESellers",
+                    "fields": [
+                        {
+                            "name": "IdSeller",
+                            "type": "string",
+                            "shortstring": true,
+                            "primary": true
+                        }, {
+                            "name": "SellerName",
+                            "type": "string",
+                            "shortstring": true
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "gotRedirect",
+                            "type": "index",
+                            "store": "CEClicks",
+                            "inverse": "redirectedTo"
+                        }, {
+                            "name": "selling",
+                            "type": "index",
+                            "store": "CEPrices",
+                            "inverse": "atSeller"
+                        }, {
+                            "name": "sellingInterval",
+                            "type": "index",
+                            "store": "CEPricesIntervals",
+                            "inverse": "atSeller"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "IdSeller",
+                            "type": "value"
+                        }
+                    ]
+                }, {
+                    "name": "CEPageviews",
+                    "fields": [
+                        {
+                            "name": "Date",
+                            "type": "datetime"
+                        }, {
+                            "name": "Pageviews",
+                            "type": "int"
+                        }, {
+                            "name": "Clicks",
+                            "type": "int"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "viewedProduct",
+                            "type": "field",
+                            "store": "CEProducts",
+                            "inverse": "wasViewed"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "Date",
+                            "type": "linear"
+                        }
+                    ]
+                }, {
+                    "name": "CEClicks",
+                    "fields": [
+                        {
+                            "name": "Date",
+                            "type": "datetime"
+                        }, {
+                            "name": "offerPosition",
+                            "type": "int"
+                        }, {
+                            "name": "allOffers",
+                            "type": "int"
+                        }, {
+                            "name": "Clicks",
+                            "type": "int"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "clickedProduct",
+                            "type": "field",
+                            "store": "CEProducts",
+                            "inverse": "wasClicked"
+                        }, {
+                            "name": "redirectedTo",
+                            "type": "field",
+                            "store": "CESellers",
+                            "inverse": "gotRedirect"
+                        }
+                    ],
+                    "keys": []
+                }, {
+                    "name": "CEPrices",
+                    "fields": [
+                        {
+                            "name": "Price",
+                            "type": "float"
+                        }, {
+                            "name": "Timestamp",
+                            "type": "datetime"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "ofProduct",
+                            "type": "field",
+                            "store": "CEProducts",
+                            "inverse": "hadPrice"
+                        }, {
+                            "name": "atSeller",
+                            "type": "field",
+                            "store": "CESellers",
+                            "inverse": "selling"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "Timestamp",
+                            "type": "linear"
+                        }
+                    ]
+                }, {
+                    "name": "CEPricesIntervals",
+                    "fields": [
+                        {
+                            "name": "Price",
+                            "type": "float"
+                        }, {
+                            "name": "Start",
+                            "type": "datetime"
+                        }, {
+                            "name": "End",
+                            "type": "datetime"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "ofProduct",
+                            "type": "field",
+                            "store": "CEProducts",
+                            "inverse": "hadPriceInterval"
+                        }, {
+                            "name": "atSeller",
+                            "type": "field",
+                            "store": "CESellers",
+                            "inverse": "sellingInterval"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "Start",
+                            "type": "linear"
+                        }, {
+                            "field": "End",
+                            "type": "linear"
+                        }
+                    ]
+                }
+            ]
+        }, {
+            "name": "CE Sellers",
+            "use_query": true,
+            "filename": "ijs_Seller.csv",
+            "query_src": {
+                "read_line_fn": "onSeller",
+                "read_line_fn_args": []
+            }
+        }, {
+            "name": "CE Pageviews [LedTv]",
+            "use_query": true,
+            "filename": "ijs_LedTv.csv",
+            "query_src": {
+                "read_line_fn": "onLinePageview",
+                "read_line_fn_args": [
+                    "LedTv"
+                ]
+            }
+        }, {
+            "name": "CE Clicks [LedTv]",
+            "use_query": true,
+            "filename": "ijs_LedTvClicksSeller.csv",
+            "query_src": {
+                "read_line_fn": "onLineClick",
+                "read_line_fn_args": [
+                    "LedTv"
+                ]
+            }
+        }, {
+            "name": "CE Prices [LedTv]",
+            "use_query": true,
+            "filename": "ijs_LedTv_prices.csv",
+            "query_src": {
+                "read_line_fn": "onLinePrice",
+                "read_line_fn_args": [
+                    "LedTv"
+                ]
+            }
+        }, {
+            "name": "CE Price intervals [LedTv]",
+            "use_query": true,
+            "filename": "ijs_LedTv_prices_intervals.csv",
+            "query_src": {
+                "read_line_fn": "onLinePriceIntervals",
+                "read_line_fn_args": [
+                    "LedTv"
+                ]
+            }
+        }, {
+            "name": "CE Product info [LedTv]",
+            "use_query": true,
+            "use_read_csv_lines": false,
+            "filename": "ijs_Products_pilot_20180509.csv",
+            "query_src": {
+                "read_line_fn": "onLineProduct",
+                "read_line_fn_args": []
+            }
+        }, {
+            "name": "CE Pageviews [Klime]",
+            "use_query": true,
+            "filename": "ijs_Klime.csv",
+            "query_src": {
+                "read_line_fn": "onLinePageview",
+                "read_line_fn_args": [
+                    "Klime"
+                ]
+            }
+        }, {
+            "name": "CE Clicks [Klime]",
+            "use_query": true,
+            "filename": "ijs_KlimeClicksSeller.csv",
+            "query_src": {
+                "read_line_fn": "onLineClick",
+                "read_line_fn_args": [
+                    "Klime"
+                ]
+            }
+        }, {
+            "name": "CE Prices [Klime]",
+            "use_query": true,
+            "filename": "ijs_Klime_prices.csv",
+            "query_src": {
+                "read_line_fn": "onLinePrice",
+                "read_line_fn_args": [
+                    "Klime"
+                ]
+            }
+        }, {
+            "name": "CE Price intervals [Klime]",
+            "use_query": true,
+            "filename": "ijs_Klime_prices_intervals.csv",
+            "query_src": {
+                "read_line_fn": "onLinePriceIntervals",
+                "read_line_fn_args": [
+                    "Klime"
+                ]
+            }
+        }, {
+            "name": "CE Product info [Klime]",
+            "use_query": true,
+            "use_read_csv_lines": false,
+            "filename": "ijs_Products_pilot_20180509.csv",
+            "query_src": {
+                "read_line_fn": "onLineProduct",
+                "read_line_fn_args": []
+            }
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

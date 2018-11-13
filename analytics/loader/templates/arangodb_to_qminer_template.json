@@ -1,0 +1,73 @@
+{
+    "source": {
+        "type": "ArangoDB",
+        "host": "http://127.0.0.1:8529",
+        "database": "_system",
+        "user": "root",
+        "password": "root"
+    },
+    "destination": {
+        "type": "QminerDB",
+        "db_path": "./dbExample/",
+        "mode": "createClean"
+    },
+    "queries": [
+        {
+            "name": "SloveniaWeather",
+            "query_src": {
+                "query": "FOR forecast IN `slovenia-weather` RETURN forecast"
+            },
+            "use_query": true,
+            "use_schema": true,
+            "mapping": [
+                {
+                    "name": "SloveniaWeather",
+                    "fields": {
+                        "Param": "param",
+                        "Value": "value",
+                        "Timestamp": "timestamp",
+                        "Region": "region",
+                        "DayOffset": "dayOffset"
+                    }
+                }
+            ],
+            "schema": [
+                {
+                    "name": "SloveniaWeather",
+                    "fields": [
+                        {
+                            "name": "param",
+                            "type": "string",
+                            "shortstring": true
+                        }, {
+                            "name": "value",
+                            "type": "float"
+                        }, {
+                            "name": "timestamp",
+                            "type": "datetime"
+                        }, {
+                            "name": "region",
+                            "type": "int"
+                        }, {
+                            "name": "dayOffset",
+                            "type": "int"
+                        }
+                    ],
+                    "joins": [],
+                    "keys": [
+                        {
+                            "field": "timestamp",
+                            "type": "linear"
+                        }, {
+                            "field": "param",
+                            "type": "value"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

@@ -1,0 +1,64 @@
+{
+    "source": {
+        "type": "Csv",
+        "dir": "../data/weather/tsv/",
+        "filename": "slovenia-jan2014-may2018_qminer.tsv"
+    },
+    "destination": {
+        "type": "QminerDB",
+        "db_path": "../data/dbs/weatherDb/",
+        "mode": "createClean"
+    },
+    "queries": [
+        {
+            "name": "Weather loader",
+            "use_query": true,
+            "use_schema": true,
+            "use_read_csv_lines": false,
+            "mapping": [
+                {
+                    "name": "Weather",
+                    "fields": {
+                        "param": "Param",
+                        "timestamp": "Timestamp",
+                        "dayOffset": "DayOffset",
+                        "region": "Region",
+                        "value": "Value"
+                    }
+                }
+            ],
+            "schema": [
+                {
+                    "name": "Weather",
+                    "fields": [
+                        {
+                            "name": "Param",
+                            "type": "string"
+                        }, {
+                            "name": "Timestamp",
+                            "type": "datetime"
+                        }, {
+                            "name": "DayOffset",
+                            "type": "int"
+                        }, {
+                            "name": "Region",
+                            "type": "int"
+                        }, {
+                            "name": "Value",
+                            "type": "float"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "Timestamp",
+                            "type": "linear"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

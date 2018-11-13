@@ -1,0 +1,37 @@
+{
+    "source": {
+        "type": "QminerDB",
+        "db_path": "./dbExample/",
+        "mode": "open"
+    },
+    "destination": {
+        "type": "MariaDB",
+        "host": "localhost",
+        "database": "example",
+        "user": "root",
+        "password": "root"
+    },
+    "queries": [
+        {
+            "name": "Weather predictions",
+            "use_query": true,
+            "use_schema": false,
+            "query_src": {
+                "$from": "WeatherPredictions",
+                "timestamp": "2018-06-15T14:34:00.000Z"
+            },
+            "query_dst": {
+                "query": "UPDATE predictions SET Prediction = ?, Timestamp = ?, Weather = ? WHERE EventID = ?",
+                "placeholder_mapping": [
+                    "prediction",
+                    "timestamp",
+                    {"mode":"fixed", "value":"good"},
+                    "eventID"
+                ]
+            }
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

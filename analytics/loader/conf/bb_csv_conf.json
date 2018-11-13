@@ -1,0 +1,384 @@
+{
+    "source": {
+        "type": "Csv",
+        "dir": "../data/raw/bigbang/sellout_and_marketing/",
+        "custom_fn_path": "./conf/bb_csv_custom_fn"
+    },
+    "destination": {
+        "type": "QminerDB",
+        "db_path": "../data/dbs/ceBbDb/",
+        "mode": "createClean"
+    },
+    "queries": [
+        {
+            "name": "BB Schema",
+            "use_query": false,
+            "use_schema": true,
+            "schema": [
+                {
+                    "name": "BBProduct",
+                    "fields": [
+                        {
+                            "name": "ProdType",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "ArtikelID",
+                            "type": "string",
+                            "shortstring": true,
+                            "primary": true
+                        }, {
+                            "name": "EanKoda",
+                            "type": "string"
+                        }, {
+                            "name": "ArtikelNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaZnamkaID",
+                            "type": "int"
+                        }, {
+                            "name": "BlagovnaZnamkaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaNaziv1",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaNaziv2",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaNaziv3",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaNaziv4",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaID1",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaID2",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaID3",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "BlagovnaSkupinaID4",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "ID_BRICK",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "NAZIV_BRICK",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "wasSold",
+                            "type": "index",
+                            "store": "BBSellout",
+                            "inverse": "soldProduct"
+                        }, {
+                            "name": "hasProperty",
+                            "type": "index",
+                            "store": "BBProductProperty",
+                            "inverse": "propertyOf"
+                        }, {
+                            "name": "promotedIn",
+                            "type": "index",
+                            "store": "BBActivity",
+                            "inverse": "promotedProduct"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "ProdType",
+                            "type": "value"
+                        }, {
+                            "field": "EanKoda",
+                            "type": "value"
+                        }
+                    ]
+                }, {
+                    "name": "BBProductProperty",
+                    "fields": [
+                        {
+                            "name": "PredlogaID",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "PredlogaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "VRSTNI_RED",
+                            "type": "int"
+                        }, {
+                            "name": "OBVEZNOST",
+                            "type": "int"
+                        }, {
+                            "name": "LastnostID",
+                            "type": "int"
+                        }, {
+                            "name": "LastnostNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "VrednostID",
+                            "type": "int"
+                        }, {
+                            "name": "VrednostNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "propertyOf",
+                            "type": "field",
+                            "store": "BBProduct",
+                            "inverse": "hasProperty"
+                        }
+                    ],
+                    "keys": []
+                }, {
+                    "name": "BBSellout",
+                    "fields": [
+                        {
+                            "name": "DAN",
+                            "type": "datetime"
+                        }, {
+                            "name": "Kolicina",
+                            "type": "int"
+                        }, {
+                            "name": "ProdajnaCena",
+                            "type": "float"
+                        }, {
+                            "name": "MaloprodajnaCena",
+                            "type": "float"
+                        }, {
+                            "name": "Popust",
+                            "type": "float"
+                        }, {
+                            "name": "ProdajniKanal2ID",
+                            "type": "int"
+                        }, {
+                            "name": "PoslovalnicaID",
+                            "type": "int"
+                        }, {
+                            "name": "PoslovalnicaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "PoslovalnicaPostaID",
+                            "type": "int"
+                        }, {
+                            "name": "PoslovalnicaPostaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "RegijaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "StatisticnaRegijaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "StatusAbc",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "StatusBsp",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "StatusEol",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "soldProduct",
+                            "type": "field",
+                            "store": "BBProduct",
+                            "inverse": "wasSold"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "DAN",
+                            "type": "value"
+                        }, {
+                            "field": "Kolicina",
+                            "type": "linear"
+                        }
+                    ]
+                }, {
+                    "name": "BBActivity",
+                    "fields": [
+                        {
+                            "name": "ST_AKCIJE",
+                            "type": "int"
+                        }, {
+                            "name": "AkcijaID",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "AkcijaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "StevilkaAkcijeNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "KANALOGLAS",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "KanalOglasevanjaNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "ProdajniKatalogID",
+                            "type": "int",
+                            "null": true
+                        }, {
+                            "name": "ProdajniKatalogNaziv",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true,
+                            "null": true
+                        }, {
+                            "name": "ZAC_DAT",
+                            "type": "datetime"
+                        }, {
+                            "name": "KON_DAT",
+                            "type": "datetime"
+                        }, {
+                            "name": "POPUSTCENA",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "POPUST",
+                            "type": "float"
+                        }, {
+                            "name": "ZAC_CE_MA_PRO_A",
+                            "type": "float"
+                        }, {
+                            "name": "KON_CE_MA_PRO_A",
+                            "type": "float"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "promotedProduct",
+                            "type": "field",
+                            "store": "BBProduct",
+                            "inverse": "promotedIn"
+                        }
+                    ],
+                    "keys": []
+                }
+            ]
+        }, {
+            "name": "BB Sellout [TV]",
+            "use_query": true,
+            "filename": "BB_SELLOUT_SKU_TV_jan2015-nov2017.tsv",
+            "query_src": {
+                "read_line_fn": "onLineSellout",
+                "read_line_fn_args": ["TV"]
+            }
+        }, {
+            "name": "BB Product properties [TV]",
+            "use_query": true,
+            "filename": "BB_Lastnosti_artikla_SKU_TV_jan2015-nov2017.tsv",
+            "query_src": {
+                "read_line_fn": "onLineProductProperty",
+                "read_line_fn_args": ["TV"]
+            }
+        }, {
+            "name": "BB Marketing activities [TV]",
+            "use_query": true,
+            "filename": "BB_aktivnosti_SKU_TV_jan2015-nov2017.tsv",
+            "query_src": {
+                "read_line_fn": "onLineActivity",
+                "read_line_fn_args": ["TV"]
+            }
+        }, {
+            "name": "BB Sellout [Klima]",
+            "use_query": true,
+            "filename": "BB_SELLOUT_SKU_KLIMA_jan2015-nov2017.tsv",
+            "query_src": {
+                "read_line_fn": "onLineSellout",
+                "read_line_fn_args": ["KLIMA"]
+            }
+        }, {
+            "name": "BB Product properties [Klima]",
+            "use_query": true,
+            "filename": "BB_Lastnosti_artikla_SKU_KLIMA_jan2015-nov2017.tsv",
+            "query_src": {
+                "read_line_fn": "onLineProductProperty",
+                "read_line_fn_args": ["KLIMA"]
+            }
+        }, {
+            "name": "BB Marketing activities [Klima]",
+            "use_query": true,
+            "filename": "BB_aktivnosti_SKU_KLIMA_jan2015-nov2017.tsv",
+            "query_src": {
+                "read_line_fn": "onLineActivity",
+                "read_line_fn_args": ["KLIMA"]
+            }
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

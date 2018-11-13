@@ -1,0 +1,65 @@
+{
+    "source": {
+        "type": "Csv",
+        "dir": "../data/",
+        "filename": "example.tsv"
+    },
+    "destination": {
+        "type": "QminerDB",
+        "db_path": "./dbExample/",
+        "mode": "createClean"
+    },
+    "queries": [
+        {
+            "name": "Example Schema",
+            "use_query": true,
+            "use_schema": true,
+            "mapping": [
+                {
+                    "name": "WeatherPredictions",
+                    "fields": {
+                        "eventID": "eventID",
+                        "prediction": "prediction",
+                        "timestamp": "timestamp",
+                        "weather": "weather"
+                    }
+                }
+            ],
+            "schema": [
+                {
+                    "name": "WeatherPredictions",
+                    "fields": [
+                        {
+                            "name": "eventID",
+                            "type": "string"
+                        }, {
+                            "name": "prediction",
+                            "type": "int"
+                        }, {
+                            "name": "timestamp",
+                            "type": "datetime"
+                        }, {
+                            "name": "weather",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }
+                    ],
+                    "joins": [],
+                    "keys": [
+                        {
+                            "field": "timestamp",
+                            "type": "linear"
+                        }, {
+                            "field": "eventID",
+                            "type": "value"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

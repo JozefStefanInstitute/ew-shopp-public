@@ -1,0 +1,239 @@
+{
+    "source": {
+        "type": "ArangoDB",
+        "host": "http://127.0.0.1:8529",
+        "database": "_system",
+        "user": "root",
+        "password": "root"
+    },
+    "destination": {
+        "type": "QminerDB",
+        "db_path": "./dbArango/",
+        "mode": "createClean"
+    },
+    "queries": [
+        {
+            "name": "JOT-campaings-germany",
+            "query_src": "FOR doc IN `JOT-campaings-germany` RETURN doc",
+            "use_query": true,
+            "use_schema": true,
+            "mapping": [
+                {
+                    "name": "JOTCampaingsGermany",
+                    "fields": {
+                        "type": "type",
+                        "value": "value",
+                        "prefix": "prefix",
+                        "rdf": "rdf",
+                        "label": "label",
+                        "google:matchType": "googleMatchType",
+                        "google:numberOfClicks": "googleNumberOfClicks",
+                        "google:adPosition": "googleAdPosition",
+                        "dbp:date": "dbpDate"
+                    }
+                }
+            ],
+            "schema": [
+                {
+                    "name": "JOTCampaingsGermany",
+                    "fields": [
+                        {
+                            "name": "type",
+                            "type": "string",
+                            "shortstring": true
+                        }, {
+                            "name": "value",
+                            "type": "string",
+                            "shortstring": true
+                        }, {
+                            "name": "prefix",
+                            "type": "string",
+                            "shortstring": true
+                        }, {
+                            "name": "rdf",
+                            "type": "string",
+                            "shortstring": true
+                        }, {
+                            "name": "label",
+                            "type": "string"
+                        }, {
+                            "name": "googleMatchType",
+                            "type": "string",
+                            "shortstring": true,
+                            "codebook": true
+                        }, {
+                            "name": "googleNumberOfClicks",
+                            "type": "int"
+                        }, {
+                            "name": "googleNumberOfImpressions",
+                            "type": "int"
+                        }, {
+                            "name": "googleAdPosition",
+                            "type": "float"
+                        }, {
+                            "name": "dbpDate",
+                            "type": "datetime"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "hasWeather",
+                            "type": "field",
+                            "store": "JOTCampaingsGermanyWeather",
+                            "inverse": "hasRegion",
+                            "key": "rdf"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "rdf",
+                            "type": "value"
+                        }
+                    ]
+                }
+            ]
+        }, {
+            "name": "JOT-campaings-germany-weather",
+            "query_src": "FOR doc IN `JOT-campaings-germany-weather` RETURN doc",
+            "use_query": true,
+            "use_schema": true,
+            "mapping": [
+                {
+                    "name": "JOTCampaingsGermanyWeather",
+                    "fields": {
+                        "rdf": "rdf",
+                        "weather": "weather"
+                    }
+                }
+            ],
+            "schema": [
+                {
+                    "name": "JOTCampaingsGermanyWeather",
+                    "fields": [
+                        {
+                            "name": "rdf",
+                            "type": "string",
+                            "shortstring": true,
+                            "primary": true
+                        }, {
+                            "name": "weather",
+                            "type": "string",
+                            "shortstring": true
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "hasRegion",
+                            "type": "index",
+                            "store": "JOTCampaingsGermany",
+                            "inverse": "hasWeather",
+                            "key": "rdf"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "rdf",
+                            "type": "value"
+                        }
+                    ]
+                }
+            ]
+        }, {
+            "name": "predictions",
+            "query_src": {
+                "$from": "Weather",
+                "$or": [
+                    {
+                        "Weather": "good"
+                    }
+                ]
+            },
+            "query_dst": {
+                "query": "UPDATE predictions SET Weather = ? WHERE Date = ?",
+                "placeholder_mapping": [
+                    "Weather", "Date"
+                ]
+            },
+            "use_query": false,
+            "use_schema": true,
+            "mapping": [
+                {
+                    "name": "Predictions",
+                    "fields": {
+                        "ID": "ID",
+                        "Prediction": "Prediction",
+                        "Product": "Product"
+                    }
+                }, {
+                    "name": "Weather",
+                    "fields": {
+                        "ID": "ID",
+                        "weather": "Weather",
+                        "Date": "Date"
+                    }
+                }
+            ],
+            "schema": [
+                {
+                    "name": "Predictions",
+                    "fields": [
+                        {
+                            "name": "ID",
+                            "type": "int"
+                        }, {
+                            "name": "Prediction",
+                            "type": "int"
+                        }, {
+                            "name": "Product",
+                            "type": "int"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "hasWeather",
+                            "type": "index",
+                            "store": "Weather",
+                            "inverse": "hasPrediction",
+                            "key": "ID"
+                        }
+                    ]
+                }, {
+                    "name": "Weather",
+                    "fields": [
+                        {
+                            "name": "ID",
+                            "type": "int"
+                        }, {
+                            "name": "Weather",
+                            "type": "string"
+                        }, {
+                            "name": "Date",
+                            "type": "datetime"
+                        }
+                    ],
+                    "joins": [
+                        {
+                            "name": "hasPrediction",
+                            "type": "field",
+                            "store": "Predictions",
+                            "inverse": "hasWeather",
+                            "key": "ID"
+                        }
+                    ],
+                    "keys": [
+                        {
+                            "field": "Date",
+                            "type": "value"
+                        }, {
+                            "field": "Weather",
+                            "type": "value"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

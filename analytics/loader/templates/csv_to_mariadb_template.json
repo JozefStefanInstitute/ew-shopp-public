@@ -1,0 +1,32 @@
+{
+    "source": {
+        "type": "Csv",
+        "dir": "../data/",
+        "filename": "example.tsv"
+    },
+    "destination": {
+        "type": "MariaDB",
+        "host": "localhost",
+        "database": "example",
+        "user": "root",
+        "password": "root"
+    },
+    "queries": [
+        {
+            "name": "Weather predictions",
+            "use_query": true,
+            "use_schema": false,
+            "query_dst": {
+                "query": "UPDATE predictions SET Prediction = ?, Timestamp = ? WHERE EventID = ?",
+                "placeholder_mapping": [
+                    "prediction",
+                    "timestamp",
+                    "eventID"
+                ]
+            }
+        }
+    ],
+    "misc": {
+        "verbose": true
+    }
+}

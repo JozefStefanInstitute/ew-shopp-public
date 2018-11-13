@@ -1,0 +1,19 @@
+{
+    "big_bang": {
+        "dir": "../data/bigbang/sellout_and_marketing/",
+        "product_types": ["TV", "KLIMA", "MOBILNI", "SUSILNI"],
+        "data_types": ["Lastnosti_artikla", "SELLOUT", "aktivnosti"],
+        "filename_template": "BB_<data_type>_SKU_<product_type>_jan2015-nov2017.tsv"
+    },
+    "ceneje": {
+        "dir": "../data/ceneje/sales_forecast/",
+        "product_types": ["LedTv", "Klime", "MobilePhones", "DryMachines", "WinterTyres", "SummerTyres"],
+        "data_types": ["", "ClicksSeller", "_prices", "_prices_intervals"],
+        "filename_template": "ijs_<product_type><data_type>.csv",
+        "products_filename": "ijs_Products_pilot_20180309.csv"
+    },
+    "weather":{
+        "dir": "../data/weather/",
+        "filename": "slovenia-2014-2017_qminer.tsv"
+    }
+}

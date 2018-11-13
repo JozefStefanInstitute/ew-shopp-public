@@ -1,0 +1,61 @@
+{
+    "source": {
+        "type": "QminerDB",
+        "db_path": "./dbExample/",
+        "mode": "open"
+    },
+    "destination": {
+        "type": "ArangoDB",
+        "host": "http://127.0.0.1:8529",
+        "database": "_system",
+        "user": "root",
+        "password": "root"
+    },
+    "queries": [
+        {
+            "name": "SloveniaWeather",
+            "query_src": {
+                "$from": "SloveniaWeather",
+                "timestamp": "2018-06-12T14:34:00"
+            },
+            "query_dst": {
+                "query": "INSERT {`Param`: ?, `Region`: ?, `Timestamp`: ?, `DayOffset`: \"0\", `Value`: \"290.0\" } IN `slovenia-weather`",
+                "placeholder_mapping": [
+                    "param", "region", "timestamp"
+                ]
+            },
+            "use_query": true,
+            "use_schema": false,
+            "mapping": [
+                {
+                    "name": "SloveniaWeather",
+                    "fields": {
+                        "param": {
+                            "name": "Param",
+                            "type": "string"
+                        },
+                        "value": {
+                            "name": "Value",
+                            "type": "float"
+                        },
+                        "timestamp": {
+                            "name": "Timestamp",
+                            "type": "datetime"
+                        },
+                        "region": {
+                            "name": "Region",
+                            "type": "int"
+                        },
+                        "dayOffset": {
+                            "name": "DayOffset",
+                            "type": "int"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "misc": {
+        "verbose": false
+    }
+}
