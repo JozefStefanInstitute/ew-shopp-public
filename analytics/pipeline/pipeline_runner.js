@@ -53,14 +53,14 @@ function exec(pipeline, mode, overBase = undefined, modelsRootDir = undefined) {
     * predict
         load fitted components from disk and do predictions on records stored in "Input" store
 
-    stores/records from pipeline's execution base are overriden by stores from overBase 
+    stores/records from pipeline's execution base are overriden by stores from overBase
     (if they exist).
     */
     assert(["fit-init", "fit", "predict", "predict-active", "transform"].indexOf(mode) >= 0,
         "Mode " + mode + " not recognized");
     pipeline["mode"] = mode;
     modelsRootDir = modelsRootDir == null ? MODELS_ROOT_DIR : modelsRootDir;
-    
+
     if (!pipeline.hasOwnProperty("dir")){
         // If 'usecase' field is defined use the new location
         if(pipeline.hasOwnProperty("usecase")){
@@ -78,7 +78,7 @@ function exec(pipeline, mode, overBase = undefined, modelsRootDir = undefined) {
                 console.log("'id' or 'name' + 'version' are not defined in configurations", "ERROR");
                 return null;
             }
-            
+
             // Model files and QMiner db are stored in pipeline directory
             modelsRootDir += modelsRootDir.endsWith("/") ? "" : "/";
             pipeline["dir"] = modelsRootDir + modelDir + "/";
@@ -340,6 +340,8 @@ function output(pipeline, base) {
     let execOutputFn = (module) => {
         const params = module["params"];
         params["name"] = pipeline["name"];
+        params["feature_store"] = "FtrSpace";
+        params["input_feat_store"] = "InputFeat";
         params["input_store"] = "Input";
         params["output_store"] = "Output";
 
