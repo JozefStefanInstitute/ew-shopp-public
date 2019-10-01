@@ -12,6 +12,11 @@ config.plotly = {};
 config.plotly.username = process.env.PLOTLY_USER || undefined;
 config.plotly.api_key = process.env.PLOTLY_PASSWORD || undefined;
 
+// EventRegistry API configs
+config.eventRegisty = {
+    apiKey:  process.env.EVENTREGISTRY_KEY || undefined,
+};
+
 // Paths
 config.paths = {};
 config.paths.dataDir = "../data/";
