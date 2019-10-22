@@ -104,7 +104,9 @@ class WeatherVectorizer {
             records.sortByField("Timestamp", true);
         } else {
             console.warn(
-                "WARNING: Weather store is missing 'Timestamp' key. This may lead to incorrect context endpoints!"
+                "WARNING: Weather store is missing 'Timestamp' key. Please add { \"field\": \"Timestamp\"," +
+                " \"type\": \"linear\" } as a key in the weather store scheme. Otherwise, context endpoints may be" +
+                " incorrect!"
             );
         }
 

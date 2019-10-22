@@ -23,7 +23,7 @@ function hasSublist(list, sublist) {
 
 function exec(params, base) {
     // Base containing pre-build weather features and descriptions
-    const inputBase = new qm.Base({mode: "openReadOnly", dbPath: params["input_db"]});
+    const inputBase = new qm.Base({ mode: "openReadOnly", dbPath: params["input_db"] });
 
     let weatherFeaturesStore = inputBase.store("Forecast" + Math.abs(params["forecast_offset"]));
     let weatherFeaturesDescriptionStore = inputBase.store("Forecast" + Math.abs(params["forecast_offset"]) + "Desc");
@@ -42,12 +42,21 @@ function exec(params, base) {
         selectedFeaturesName.push(desc.FeatureName);
     }
 
+    if (params["features"] != null) {
+        selectedFeaturesName = selectedFeaturesName.filter(name => params["features"].some(e => name.includes(e)))
+    }
+
+    if (params["sample"] != null) {
+        selectedFeaturesName = utils.shuffle(selectedFeaturesName);
+        selectedFeaturesName = selectedFeaturesName.slice(0, params["sample"]);
+    }
+
     assert.notStrictEqual(selectedFeaturesName.length, 0, "Weather features not found!");
     // Featurize inputs
     let storeFields = [], features = [];
 
     selectedFeaturesName.forEach(featureName => {
-        storeFields.push({name: featureName, type: "float"});
+        storeFields.push({ name: featureName, type: "float" });
         features.push({
             type: "numeric",
             source: params["output_store"],
@@ -98,4 +107,4 @@ function exec(params, base) {
     return [features, mapping];
 }
 
-module.exports = {exec};
+module.exports = { exec };
