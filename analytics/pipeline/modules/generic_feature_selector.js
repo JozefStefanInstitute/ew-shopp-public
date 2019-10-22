@@ -52,7 +52,8 @@ function exec(params, base) {
     let key, usedKeys;
     for (let i = 0; i < featureRecords.length; i++) {
         let rec = featureRecords[i];
-        [key, usedKeys] = utils.getKey(params["input"]["primary_key"], rec, null, params["keep_only_date"]);
+        [key, usedKeys] = utils.getKey(params["input"]["primary_key"], rec, null, params["keep_only_date"],
+            params["forecast_offset"]);
         mappingFeatRec.set(key, rec);
     }
 

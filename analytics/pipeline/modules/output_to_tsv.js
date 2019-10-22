@@ -15,6 +15,13 @@ function exec(params, base) {
     let outputRecs = outputStore.allRecords;
     let otherFields = inputStore.fields.map(x => x.name).filter(x => x !== "Value");
 
+    let featureFields, featureRecs;
+    if (params["include_features"] === true) {
+        let inputStoreFeat = base.store(params["feature_store"]);
+        featureFields = inputStoreFeat.fields.map(x => x.name);
+        featureRecs = inputStoreFeat.allRecords;
+    }
+
     // Write to tsv file
     console.log("Saving pipeline's output to " + params["output_file"]);
     let addHeader = true, ff;
@@ -30,19 +37,50 @@ function exec(params, base) {
     if (addHeader) {
         let headerLine = "";
         for (let field of otherFields) headerLine += field + "\t";
-        headerLine += "InputValue\tOutputValue";
+        headerLine += "TrueValue\tPredictedValue";
+
+        if (params["include_features"] === true) {
+            headerLine += "\t";
+            for (let field of featureFields) headerLine += field + "\t";
+        }
+
         ff.writeLine(headerLine);
     }
 
+    let lines = [];
     inputStore.allRecords.each((rec, i) => {
-        let line = "";
-        for (let field of otherFields)
-            line += rec[field] + "\t";
+        // [PRIVATE KEY ...] [TRUE VALUE] | [PREDICTED VALUE] | [FEATURES ...]
+        let line = {};
+        for (let field of otherFields) {
+            line[field] = rec[field];
+        }
 
-        // Input_value + predicted_value
-        line += rec["Value"] + "\t" + outputRecs[i]["Value"];
-        ff.writeLine(line);
+        line["TrueValue"] = rec.Value;
+        line["PredictedValue"] = outputRecs[i]["Value"];
+        if (params["include_features"] === true) {
+            for (let field of featureFields) {
+                let val = featureRecs[i][field];
+                val = !isNaN(val) ? Number.parseFloat(val).toFixed(5) : val;
+                line[field] = val;
+            }
+        }
+        lines.push(line);
     });
+
+    if (params["sort_by"] != null) {
+        lines.sort((a, b) => {return a[params["sort_by"]] - b[params["sort_by"]]});
+    }
+
+    // Write to file
+    for(const line of lines){
+        let lineStr = "";
+        for(const column of Object.values(line)){
+            lineStr += column + "\t";
+        }
+        ff.writeLine(lineStr);
+    }
+
+    ff.flush();
     ff.close();
 }
 
