@@ -4,6 +4,8 @@ const qm = require("qminer");
 /** @type {Object} * @property {Function} FIn */
 const fs = qm.fs;
 const nodeFs = require("fs");
+const readline = require("readline");
+const path = require("path");
 const arangoDb = require("arangojs").Database;
 const mysql = require("mysql");
 
@@ -26,7 +28,7 @@ class Handle {
         this.direction = direction;
         this.promises = [];
         this.affectedRecords = 0;
-        this.verbose = conf.verbose;
+        this.verbose = Handle.verbosityLevels[conf.verbose != null ? conf.verbose : "info"];
         this.name = undefined;
         this.returnQueryRes = !!conf["query_res"];
         if (this.returnQueryRes) this.results = [];
@@ -59,36 +61,45 @@ class Handle {
     }
 
     logQuery(query) {
-        console.log(`Executing query ${JSON.stringify(query, null, 4)} on ${this.name}.`);
+        this.log(`Executing query ${JSON.stringify(query, null, 4)} on ${this.name}.`);
     }
 
-    log() {
-        Handle.log(this.direction, this.name);
+    showInfo() {
+        this.logSeparator(this.direction, this.name);
         if (this.direction === "Destination") {
-            console.log(`   Affected ${this.affectedRecords} records.`);
-            Handle.log("");
+            this.log(`   Affected ${this.affectedRecords} records.`);
+            this.logSeparator("");
         } else if (this.direction === "Source") {
-            console.log(`   Queried  ${this.affectedRecords} record${this.affectedRecords === 1 ? "." : "s."}`);
+            this.log(`   Queried  ${this.affectedRecords} record${this.affectedRecords === 1 ? "." : "s."}`);
         }
     }
 
-    static log(mode, name = "") {
+    log(msg, type = "info", extMsg = "") {
+        if (Handle.verbosityLevels[type] <= this.verbose) {
+            if (type === "info") {
+                console.log(msg, extMsg);
+            } else if (type === "error") {
+                console.error(msg, extMsg);
+            } else if (type === "warn") {
+                console.warn(msg, extMsg);
+            }
+        }
+    }
+
+    logSeparator(mode, name = "") {
         switch (mode) {
             case "Source":
-                console.log("================================ RESULTS ================================");
-                console.log(`=== Source (${name}) ===`);
+                this.log("================================ RESULTS ================================");
+                this.log(`=== Source (${name}) ===`);
                 break;
             case "Destination":
-                console.log(`=== Destination (${name}) ===`);
+                this.log(`=== Destination (${name}) ===`);
                 break;
             case "Initial":
-                console.log("============================= INITIAL STATE =============================");
-                break;
-            case "Querying":
-                console.log("================================ QUERYING ===============================");
+                this.log("============================= INITIAL STATE =============================");
                 break;
             default:
-                console.log("=========================================================================");
+                this.log("=========================================================================");
         }
     }
 
@@ -104,6 +115,14 @@ class Handle {
         }
     }
 }
+
+Handle.verbosityLevels = {
+    none: -1,   // None
+    error: 1,   // Error messages
+    warn: 2,    // Warnings and errors
+    info: 3,    // Extensive information and lower level
+    debug: 4    // Logs all type of messages
+};
 
 //======================================================================================================================
 // ARANGODB DATABASE HANDLE
@@ -128,13 +147,13 @@ class ArangoDBHandle extends Handle {
         this.db.useBasicAuth(conf.user, conf.password);
         this.db.useDatabase(conf.database);
         this.name = `ArangoDB [${conf.database}, ${conf.host}]`;
-        console.log(`${direction}: ${this.name}`);
+        this.log(`${direction}: ${this.name}`);
     }
 
     close() {
         return Promise.all(this.promises).then(() => {
             return new Promise(() => {
-                this.log();
+                this.showInfo();
             });
         });
     }
@@ -168,7 +187,7 @@ class ArangoDBHandle extends Handle {
                 this.db
                     .query(queryStr)
                     .then(processQueryFn, processQueryErrFn)
-                    .catch(e => console.error("Failed execute query: ", e))
+                    .catch(e => this.log("Failed execute query: ", "error", e))
             );
         };
         // Return callback function
@@ -187,7 +206,7 @@ class ArangoDBHandle extends Handle {
 
     async queryAll(queries) {
         for (let queryParams of queries) {
-            if (!queryParams.use_query) continue;
+            if (queryParams.use_query !== true) continue;
 
             // Prepare destination store function
             let storeFn = this.dstDb.storeFn(queryParams, false);
@@ -205,12 +224,12 @@ class ArangoDBHandle extends Handle {
             let queryStr = queryParams.query_src.query;
             this.logQuery(queryStr);
             return this.db
-                .query(queryStr)
-                .then(processDocumentsFn, processDocumentsErrFn)
-                .catch(e => console.error("Failed to execute query: ", e));
+                       .query(queryStr)
+                       .then(processDocumentsFn, processDocumentsErrFn)
+                       .catch(e => console.error("Failed to execute query: ", e));
         } else {
             // No query is given - load all and use 1-to-1 mapping
-            console.log("Parameter 'query' in 'query_src' is not defined. Using 'name' of a query as " +
+            this.log("Parameter 'query' in 'query_src' is not defined. Using 'name' of a query as " +
                 "a collection name to get all documents from database.");
 
             let collections = this.db.collection(queryParams.name);
@@ -273,13 +292,13 @@ class MariaDBHandle extends Handle {
         });
         this.recs = [];
         this.name = "MariaDB [" + conf.host + "]";
-        console.log(direction + ": " + this.name);
+        this.log(direction + ": " + this.name);
     }
 
     close() {
         return Promise.all(this.promises).then(() => {
             return new Promise(resolve => {
-                this.log();
+                this.showInfo();
                 this.db.end(resolve);
             });
         });
@@ -385,7 +404,7 @@ class MariaDBHandle extends Handle {
 
     async queryAll(queries) {
         for (let queryParams of queries) {
-            if (!queryParams.use_query) continue;
+            if (queryParams.use_query !== true) continue;
             let storeFn = this.dstDb.storeFn(queryParams, false);
             await this.query(queryParams, storeFn);
         }
@@ -406,7 +425,7 @@ class MariaDBHandle extends Handle {
             this.i = 0;
             this.db.getConnection((error, connection) => {
                 if (error) {
-                    console.log(error);
+                    this.log(error);
                     reject(error);
                     throw error;
                 }
@@ -460,22 +479,39 @@ class MariaDBHandle extends Handle {
 class CSVHandle extends Handle {
     constructor(conf, direction) {
         super(conf, direction);
+        // Global or default parameters
         this.dir = conf.dir ? conf.dir : "";
         this.customFn = conf.customFn ? conf.customFn : null;
-        this.filename = this.dir + (conf.filename ? conf.filename : "");
-        this.hasGlobalFile = this.filename && utils.existsFile(this.filename);
+        this.fileExtractDepth = conf.depth ? conf.depth : 1;
+        this.filenames = [];
+        // If exists any global filename or directory
+        if (conf.filename != null || conf.dir != null) {
+            // If filename not given than resolve all files inside the directory
+            if (conf.filename == null) {
+                this.filenames = utils.extractPaths([this.dir], this.fileExtractDepth);
+            } else {
+                this.filenames.push(path.join(this.dir, (conf.filename ? conf.filename : "")));
+            }
+            if (this.filenames.length === 1) {
+                this.name = "CSV [" + this.filenames[0] + "]";
+            } else {
+                this.name = "CSVs [" + this.dir + " - path depth of " + this.fileExtractDepth + "]";
+            }
+        } else {
+            this.name = "CSVs [No global files given]"
+        }
+
         this.delimiter = conf.delimiter != null ? conf.delimiter : "\t";
-        this.hasHeader = conf.hasHeader != null || conf.hasHeader;
-        this.name = "CSV [" + this.filename + "]";
+        this.hasHeader = conf.hasHeader != null ? conf.hasHeader : true;
         this.allAffectedRecords = 0;
         this.allReadLines = 0;
         this.csvs = new Set();
-        console.log("Global " + direction + ": " + this.name);
+        this.log("Global " + direction + ": " + this.name);
     }
 
     close() {
         return Promise.all(this.promises).then(() => {
-            this.log();
+            this.showInfo();
         });
     }
 
@@ -485,15 +521,31 @@ class CSVHandle extends Handle {
 
     async queryAll(queries) {
         for (let queryParams of queries) {
-            if (!queryParams.use_query) continue;
-
+            if (queryParams.use_query !== true) continue;
             try {
-                let file = this.openFile(queryParams);
-                let storeFn = this.getStoreFn(queryParams);
-                if (storeFn == null) continue;
-                let filterFn = this.getFilterFn(queryParams);
-                await this.query(queryParams, file, storeFn, filterFn);
-                if (this.dstDb.upload) await this.dstDb.upload();
+                let filenames = [];
+                // Check if local file defined
+                if (queryParams.filename != null || queryParams.dir != null) {
+                    let filename = path.join(queryParams.dir != null ? queryParams.dir : this.dir,
+                        queryParams.filename ? queryParams.filename : "");
+                    let depth = queryParams.depth ? queryParams.depth : this.fileExtractDepth;
+                    filenames = utils.extractPaths([filename], depth);
+                    if (filenames.length === 0) continue;
+                } else {
+                    // Otherwise use global file sources
+                    this.log("Local query's CSV file not defined. Using global CSV source files.");
+                    filenames = this.filenames;
+                }
+
+                for (const filename of filenames) {
+                    let file = this.openFile(filename, queryParams);
+                    this.log(`Querying file '${file.path}'.`);
+                    let storeFn = this.getStoreFn(file, queryParams);
+                    if (storeFn == null) continue;
+                    let filterFn = this.getFilterFn(queryParams);
+                    await this.query(queryParams, file, storeFn, filterFn);
+                    if (this.dstDb.upload) await this.dstDb.upload();
+                }
             } catch (error) {
                 throw error;
             }
@@ -504,29 +556,26 @@ class CSVHandle extends Handle {
 
     query(queryParams, file, storeFn, filterFn) {
         return new Promise((resolve, reject) => {
-            if (queryParams["use_read_csv_lines"] == null || queryParams["use_read_csv_lines"] === true) {
+            if (queryParams.use_read_csv_lines == null || queryParams.use_read_csv_lines === true) {
+                // Use internal QMiner CSV lines
                 return this.readCsvLines(queryParams, file, storeFn, filterFn, resolve, reject);
             } else {
+                // Use internal NodeJS functions to read file
                 return this.readCsvLinesIter(queryParams, file, storeFn, filterFn, resolve, reject);
             }
-        })
-            .then(res => {
-                this.allAffectedRecords += res.affectedRecords;
-                this.allReadLines += res.readLines;
-
-                this.closeFile(file);
-            })
-            .catch(e => console.error("Failed to read line: ", e));
+        }).then(res => {
+            this.allAffectedRecords += res.affectedRecords;
+            this.allReadLines += res.readLines;
+            CSVHandle.closeFile(file);
+        }).catch(e => console.error("Failed to read line: ", e));
     }
 
     readCsvLines(queryParams, file, storeFn, filterFn, resolveFn, rejectFn) {
         let nAffectedRecords = 0;
         let nSkippedRecords = 0;
         let nReadLines = 0;
-        console.log(file.name);
         return fs.readCsvLines(file.descriptor, {
-            delimiter: this.delimiter,
-            skipLines: this.hasHeader ? 1 : 0,
+            delimiter: file.delimiter,
             onLine: lineVals => {
                 let rec = this.createRec(lineVals);
                 if (filterFn(rec)) {
@@ -546,7 +595,7 @@ class CSVHandle extends Handle {
             onEnd: err => {
                 utils.showProgress("");
                 if (err) {
-                    console.log("!!! QMiner error");
+                    this.log("!!! QMiner error");
                     return rejectFn(err);
                 } else {
                     return resolveFn({
@@ -559,31 +608,49 @@ class CSVHandle extends Handle {
         });
     }
 
-    readCsvLinesIter(queryParams, file, storeFn, filterFn, resolveFn, rejectFn) {
+    async readCsvLinesIter(queryParams, file, storeFn, filterFn, resolveFn, rejectFn) {
         let nAffectedRecords = 0;
         let nSkippedRecords = 0;
         let nReadLines = 0;
-        console.log(file.name);
-        file = file.descriptor;
-        try {
-            while (!file.eof) {
-                let line = file.readLine();
-                let lineVals = line.split(this.delimiter);
+        this.log(file.path);
 
+        const processFile = () => new Promise((resolve) => {
+            file.descriptor.on("line", (line) => {
+                // Skip empty lines
+                if (line === "") return;
+
+                // Get header if does not exist
+                if (file.header.length === 0 && file.hasHeader) {
+                    CSVHandle.prepareHeader(file, queryParams, (() => line));
+                    return;
+                }
+                // Get values
+                let lineVals = line.split(file.delimiter);
+                // Create record using mapping
                 let rec = this.createRec(lineVals);
+                // Filter records if given function
                 if (filterFn(rec)) {
+                    // Store record to destination
                     let res = storeFn(rec, queryParams.query_dst);
-                    if (res === -1) {
-                        return rejectFn("Error while reading lines.");
-                    }
+                    if (res === -1) return rejectFn("Error while reading lines.");
+                    // Increase counters
                     nReadLines += 1;
                     nAffectedRecords += res;
                 }
+                // Log
                 nSkippedRecords += 1;
                 if (nReadLines % 1000 === 0) {
                     utils.showProgress(nReadLines);
                 }
-            }
+            });
+
+            file.descriptor.on("close", () => {
+                resolve();
+            })
+        });
+
+        try {
+            await processFile();
             utils.showProgress("");
             return resolveFn({
                 readLines: nReadLines,
@@ -595,45 +662,46 @@ class CSVHandle extends Handle {
         }
     }
 
-    prepareHeader(file, queryParams) {
-        this.hasHeader = queryParams.hasHeader == null || queryParams.hasHeader === true;
-        this.header = [];
-        if (this.hasHeader) {
-            // Remember header indices
-            let cols = file.readLine();
-            cols = cols.split(this.delimiter);
+    static prepareHeader(file, queryParams, getFirstLineFn) {
+        if (queryParams.hasHeader != null) file.hasHeader = queryParams.hasHeader;
+        if (file.hasHeader) {
+            let cols = getFirstLineFn(file.descriptor).split(file.delimiter);
             let i = 0;
             for (const col of cols) {
                 // Remove non-ascii characters
-                this.header[i++] = col.replace(/[^\x00-\x7F]/g, "");
+                file.header[i++] = col.replace(/[^\x00-\x7F]/g, "");
             }
-            this.hasHeader = false;
         }
     }
 
-    openFile(queryParams) {
-        let filename = this.dir + (queryParams.filename ? queryParams.filename : "");
-        if (queryParams.filename && filename && nodeFs.existsSync(filename)) {
-            this.localFile = true;
-        } else if (this.hasGlobalFile) {
-            this.localFile = false;
-            filename = this.filename;
-            console.log(`Local query's CSV file not defined. Using global CSV source file '${filename}'.`);
+    openFile(filename, queryParams) {
+        let file = {
+            path: filename,
+            isQm: false,
+            descriptor: null,
+            hasHeader: this.hasHeader,
+            delimiter: queryParams.delimiter != null ? queryParams.delimiter : this.delimiter,
+            header: []
+        };
+
+        if (queryParams.use_read_csv_lines == null || queryParams.use_read_csv_lines === true) {
+            file.isQm = true;
+            file.descriptor = fs.openRead(filename);
+            CSVHandle.prepareHeader(file, queryParams, (descriptor => descriptor.readLine()));
         } else {
-            throw Error(`CSV file '${this.hasGlobalFile ? filename : this.filename}'` +
-                "not given or does not exist. Exiting ...");
+            const fileStream = nodeFs.createReadStream(file.path);
+            file.descriptor = readline.createInterface({
+                input: fileStream,
+                crlfDelay: Infinity
+            });
         }
 
         this.csvs.add(filename);
-        let file = fs.openRead(filename);
-
-        this.prepareHeader(file, queryParams);
-        return { descriptor: file, name: filename };
+        return file;
     }
 
-    closeFile(file) {
-        file.descriptor.close();
-        this.localFile = false;
+    static closeFile(file) {
+        if (file.isQm) file.descriptor.close();
     }
 
     getFilterFn(queryParams) {
@@ -642,7 +710,7 @@ class CSVHandle extends Handle {
             : () => true;
     }
 
-    getStoreFn(queryParams) {
+    getStoreFn(file, queryParams) {
         if (queryParams.query_src != null && queryParams.query_src.read_line_fn != null) {
             // Use custom function to read/store lines
             let customFnName = queryParams.query_src.read_line_fn;
@@ -668,10 +736,10 @@ class CSVHandle extends Handle {
             }
         } else {
             this.createRec = vals => {
-                let i = 0,
-                    rec = {};
+                let i = 0, rec = {};
+                // If CSV has a header create mapping as {colName:value} otherwise create mapping {index:value}
                 for (const val of vals) {
-                    rec[this.header[i++]] = val;
+                    rec[file.hasHeader ? file.header[i++] : i++] = val;
                 }
                 return rec;
             };
@@ -684,15 +752,15 @@ class CSVHandle extends Handle {
         }
     }
 
-    log() {
+    showInfo() {
         if (this.csvs.size === 1) {
-            Handle.log(this.direction, this.name);
+            this.log(this.direction, this.name);
         } else {
-            Handle.log(this.direction, this.csvs.size + " CSVs");
+            this.logSeparator(this.direction, this.csvs.size + " CSVs");
         }
         if (this.allAffectedRecords)
-            console.log(`   Affected ${this.allAffectedRecords} record${this.allAffectedRecords === 1 ? "." : "s."}`);
-        if (this.allReadLines) console.log(`   Read ${this.allReadLines} line${this.allReadLines === 1 ? "." : "s."}`);
+            this.log(`   Affected ${this.allAffectedRecords} record${this.allAffectedRecords === 1 ? "." : "s."}`);
+        if (this.allReadLines) this.log(`   Read ${this.allReadLines} line${this.allReadLines === 1 ? "." : "s."}`);
     }
 }
 
@@ -703,10 +771,9 @@ class CSVHandle extends Handle {
  * Class to handle Qminer database.
  * @class QminerDBHandle
  * @extends Handle
- * @property {Object} db - Database instance as described in
- * [Qminer base constructor]
+ * @property {Object} db - Database instance as described in [Qminer base constructor]
  * {@link https://rawgit.com/qminer/qminer/master/nodedoc/module-qm.html#~BaseConstructorParam}.
- * @property {Function} processTypes - Type conversion from Qminer types to JavaScript types - used for mapping.
+ * @property {Function} processTypes - Type conversion from QMiner types to JavaScript types - used for mapping.
  */
 class QminerDBHandle extends Handle {
     constructor(conf, direction) {
@@ -717,12 +784,22 @@ class QminerDBHandle extends Handle {
         };
 
         if (direction === "Source" && (qmConf.mode === "create" || qmConf.mode === "createClean")) {
-            console.error("Qminer database is set as source and access mode must be set to 'open' or 'openReadOnly'!");
             if (this.dstDb) this.dstDb.close();
-            process.exit(1);
+            throw Error("QMiner database is set as source and access mode must be set to 'open' or 'openReadOnly'!")
         }
 
         if (!conf["db"]) {
+            const dbExists = utils.existsDir(qmConf.dbPath);
+            if (qmConf.mode === "open" && !dbExists) {
+                // If database does not exist and want to use in 'open' mode, warn and create new database
+                this.log(`Can not use '${qmConf.mode}' mode on '${qmConf.dbPath}' database. `
+                    + "Database does not exists. Creating clean QMinerDB.", "warn");
+                qmConf.mode = "createClean";
+                conf.mode = "createClean";
+            } else if (qmConf.mode === "openReadOnly" && !dbExists) {
+                throw Error("Database does not exists");
+            }
+            utils.createDir(qmConf.dbPath);
             this.db = new qm.Base(qmConf);
         } else {
             // Use existing handle
@@ -730,13 +807,13 @@ class QminerDBHandle extends Handle {
             this.db = conf["db"];
         }
 
-        this.name = "QminerDB [" + qmConf.dbPath + ", " + qmConf.mode + "]";
-        console.log(direction + ": " + this.name);
+        this.name = "QMinerDB [" + qmConf.dbPath + ", " + qmConf.mode + "]";
+        this.log(direction + ": " + this.name);
     }
 
     close() {
         return Promise.all(this.promises).then(() => {
-            this.log();
+            this.showInfo();
             this.db.close();
         });
     }
@@ -744,8 +821,8 @@ class QminerDBHandle extends Handle {
     initStores(queries) {
         // Create all stores at once - needed in case of joins
         if (this.verbose) {
-            Handle.log("Initial");
-            this.log();
+            this.logSeparator("Initial");
+            this.showInfo();
         }
         let stores = [];
         for (let queryParams of queries) {
@@ -759,18 +836,18 @@ class QminerDBHandle extends Handle {
             if (stores.length > 0) {
                 this.db.createStore(stores);
                 if (this.verbose) {
-                    console.log("Created stores: ", JSON.stringify(stores, null, 4));
-                    Handle.log("");
+                    this.log("Created stores: ", JSON.stringify(stores, null, 4));
+                    this.logSeparator("");
                 }
             } else {
-                console.log("No stores created.");
+                this.log("No stores created.");
             }
         }
     }
 
     async queryAll(queries) {
         for (let queryParams of queries) {
-            if (!queryParams.use_query) continue;
+            if (queryParams.use_query !== true) continue;
 
             let storeFn = this.dstDb.storeFn(queryParams, true);
             await this.query(queryParams, storeFn);
@@ -812,77 +889,82 @@ class QminerDBHandle extends Handle {
             // Get all available data for each field in the schema
             this.getSchemaInfo(queryParams, queryParams.mapping);
         } else {
-            console.log("Mapping not defined. Skipping query phase.");
+            this.log("Mapping not defined. Skipping query phase.", "warn");
             return null;
         }
 
         if (expectAllRecords) {
             return recs => {
-                for (let rec of recs)
+                for (let i = 0; i < recs.length; i++) {
                     for (let map of queryParams.mapping) {
                         let storeName = map.name;
-                        let dstStore = utils.getStore(this.db, storeName);
-                        this.processRecord(rec, dstStore, map);
+                        this.processRecord(recs[i], storeName, map, queryParams);
                     }
+                }
             };
         } else {
             return rec => {
                 // Map to fields in defined mapping schemas
                 for (let store of queryParams.mapping) {
-                    let storeName = store.name;
-                    let dstStore = utils.getStore(this.db, storeName);
-                    this.processRecord(rec, dstStore, store);
+                    this.processRecord(rec, store.name, store, queryParams);
                 }
             };
         }
     }
 
-    processRecord(record, dstStore, map) {
+    processRecord(record, storeName, map, queryParams) {
         let rec = {};
         // Create record
         for (let fromField of Object.keys(map.fields)) {
             let field = map.fields[fromField];
             if (field == null)
                 throw Error(`Cannot map '${fromField}' from source to destination.`);
-            let data;
+
             let nullVal = {
                 null: field.null == null ? (field.nullable == null ? false : field.nullable) : field.null,
-                null_values: field.null_values == null ? [] : field.null_values
+                null_values: field.null_values == null ? [] : field.null_values,
+                fixed_value: field.fixed_value == null ? false : field.fixed_value
             };
-            data = QminerDBHandle.processTypes(field.type, record[fromField], nullVal);
+
+            // Process source's value as defined in QMiner schema
+            let data = QminerDBHandle.processTypes(field.type, record[fromField], nullVal);
             if (data == null && (field.null == null || field.null === false)) {
-                console.log("Error - null value", data, field.name);
+                this.log("Error - null value", data, field.name);
             }
             rec[field.name] = data;
         }
 
-        // Push record and increment counter
-        if (this.returnQueryRes) this.results.push(rec);
-        let recId = dstStore.push(rec);
-        this.addJoins(map.joins, rec, recId);
+        // Do not save record if already exists in the database
+        if (queryParams.duplicates == null ||
+            !utils.existDuplicate(this.db, storeName, rec, queryParams.duplicates)) {
+            // Push record and increment counter
+            if (this.returnQueryRes) this.results.push(rec);
+
+            let recId = this.db.store(storeName).push(rec);
+            if (map.joins) this.addJoins(map.joins, rec, recId);
+        }
     }
 
     addJoins(joins, rec, recId) {
-        if (joins)
-            for (let join of joins) {
-                let joinStore = this.db.store(join.store);
-                if (joinStore !== null) {
-                    // Store exist
-                    if (join.key) {
-                        let searchQuery = {};
-                        searchQuery.$from = join.store;
-                        Object.keys(join.key).forEach(key => {
-                            searchQuery[join.key[key]] = rec[key];
-                        });
-                        let joinRecs = this.db.search(searchQuery);
-                        joinRecs.each(joinRec => {
-                            joinRec.$addJoin(join.inverse, recId);
-                        });
-                    } else {
-                        console.log("To enable auto generation of joins define key value in the join field.");
-                    }
+        for (let join of joins) {
+            let joinStore = this.db.store(join.store);
+            if (joinStore != null) {
+                // Store exist
+                if (join.key) {
+                    let searchQuery = {};
+                    searchQuery.$from = join.store;
+                    Object.keys(join.key).forEach(key => {
+                        searchQuery[join.key[key]] = rec[key];
+                    });
+                    let joinRecs = this.db.search(searchQuery);
+                    joinRecs.each(joinRec => {
+                        joinRec.$addJoin(join.inverse, recId);
+                    });
+                } else {
+                    this.log("To enable auto generation of joins define key value in the join field.");
                 }
             }
+        }
     }
 
     getSchemaInfo(queryParams, mapping) {
@@ -949,14 +1031,20 @@ class QminerDBHandle extends Handle {
         });
     }
 
-    static processTypes(type, value, nullVal = null) {
-        if (value == null || (nullVal && nullVal.null && nullVal.null_values.includes(value))) {
+    static processTypes(type, value, customVal = null) {
+        if (value == null) {
+            if (customVal.fixed_value) {
+                value = customVal.fixed_value;
+            } else {
+                return null;
+            }
+        } else if (customVal && customVal.null && customVal.null_values.includes(value)) {
             return null;
         }
 
         switch (type) {
             case "string":
-                return String(value);
+                return value.normalize();
             case "int": {
                 let num = Number.parseInt(value);
                 return isNaN(num) ? null : num;
@@ -970,38 +1058,55 @@ class QminerDBHandle extends Handle {
             case "json":
                 return typeof value === "string" ? JSON.parse(value) : value;
             case "datetime": {
-                let data = new Date(value);
-                if (isNaN(data.getTime())) {
-                    console.error("Invalid date:", value);
-                } else {
-                    return data.toISOString();
+                // Lambda function to check if the date format is valid
+                const isValidDateFn = (v) => {
+                    let date = new Date(v);
+                    if (isNaN(date.getTime()))
+                        return null;
+                    // Return date in ISO string most widely supported
+                    return date.toISOString();
+                };
+
+                // Value is in valid Date format
+                let parsedDate = isValidDateFn(value);
+                if (typeof parsedDate === "string") return parsedDate;
+
+                // Special case - support date format YYYYMMDD (JOT data)
+                if (value.length === 8 && typeof value === "string") {
+                    const newStr = value.substr(0, 4) + "-" + value.substr(4, 2) + "-" +
+                        value.substr(6, 2);
+                    parsedDate = isValidDateFn(newStr);
+                    if (typeof parsedDate === "string") return parsedDate;
                 }
+
+                // No resolution
+                console.error("Invalid date:", value);
                 return null;
             }
         }
         return null;
     }
 
-    log() {
-        Handle.log(this.direction, this.name);
+    showInfo() {
+        this.logSeparator(this.direction, this.name);
         if (this.direction === "Destination") {
-            console.log("QminerDB state: ");
+            this.log("QminerDB state: ");
             let stores = this.db.getStoreList();
             if (stores.length === 0) {
-                console.log("    Empty Qminer database.");
+                this.log("    Empty Qminer database.");
             } else {
                 stores.forEach(store => {
-                    console.log("   " + store.storeName + ": " + store.storeRecords + " records.");
+                    this.log("   " + store.storeName + ": " + store.storeRecords + " records.");
                     if (this.verbose) {
-                        console.log("   Last 3 records:");
+                        this.log("   Last 3 records:");
                         let lastRecs = this.db.store(store.storeName).allRecords.trunc(3, store.storeRecords - 3);
-                        console.log(JSON.stringify(lastRecs.toJSON().records, null, 4));
+                        this.log(JSON.stringify(lastRecs.toJSON().records, null, 4));
                     }
                 });
             }
-            Handle.log("");
+            this.logSeparator("");
         } else if (this.direction === "Source") {
-            console.log("   Queried " + this.affectedRecords + (this.affectedRecords === 1 ? " record." : " records."));
+            this.log("   Queried " + this.affectedRecords + (this.affectedRecords === 1 ? " record." : " records."));
         }
     }
 }
@@ -1081,7 +1186,8 @@ class Loader {
      */
     setConf(dbConf) {
         this.databaseConf = dbConf;
-        this.verbose = dbConf.misc != null && dbConf.misc.verbose != null ? dbConf.misc.verbose : false;
+        this.verbose = dbConf.misc != null && dbConf.misc.verbose != null ? (dbConf.misc.verbose === true ? "info" :
+            dbConf.misc.verbose === false ? "warn" : dbConf.misc.verbose) : "info";
         this.databaseConf.source.verbose = this.verbose;
         this.databaseConf.destination.verbose = this.verbose;
         if (this.databaseConf.source.custom_fn_path) {
@@ -1099,25 +1205,24 @@ class Loader {
     async run(closeDst = true, closeSrc = true) {
         let queries = this.databaseConf.queries;
         this.srcDb.setQueryDst(this.dstDb, queries);
-        Handle.log("Querying");
         return this.srcDb
-            .queryAll(queries)
-            .then(() => {
-                // Close databases
-                let closes = [];
-                if (closeSrc) closes.push(this.srcDb.close());
-                if (closeDst) closes.push(this.dstDb.close());
-                return Promise.all(closes);
-            })
-            .then(() => {
-                // Get results and return
-                return this.dstDb.getQueryResults();
-            })
-            .catch(error => {
-                this.srcDb.close();
-                this.dstDb.close();
-                throw error;
-            });
+                   .queryAll(queries)
+                   .then(() => {
+                       // Close databases
+                       let closes = [];
+                       if (closeSrc) closes.push(this.srcDb.close());
+                       if (closeDst) closes.push(this.dstDb.close());
+                       return Promise.all(closes);
+                   })
+                   .then(() => {
+                       // Get results and return
+                       return this.dstDb.getQueryResults();
+                   })
+                   .catch(error => {
+                       this.srcDb.close();
+                       this.dstDb.close();
+                       throw error;
+                   });
     }
 }
 
