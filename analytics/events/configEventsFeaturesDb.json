@@ -1,0 +1,130 @@
+{
+    "name": "EventsFeatures",
+    "fields": [
+        {
+            "name": "EventFeatureId",
+            "type": "string",
+            "shortstring": true
+        }, {
+            "name": "KeywordId",
+            "type": "string",
+            "shortstring": true,
+            "null": true
+        }, {
+            "name": "ConceptUri",
+            "type": "string",
+            "shortstring": true,
+            "codebook": true
+        }, {
+            "name": "LocationUri",
+            "type": "string_v",
+            "null": true
+        }, {
+            "name": "Timestamp",
+            "type": "datetime"
+        }, {
+            "name": "Region",
+            "type": "string",
+            "null": true
+        }, {
+            "name": "EventsCounts",
+            "type": "int"
+        }, {
+            "name": "ArticlesCounts",
+            "type": "int"
+        }, {
+            "name": "MentionedArticlesCurrent",
+            "type": "int"
+        }, {
+            "name": "MentionedArticlesFuture",
+            "type": "int"
+        }, {
+            "name": "MentionedEventsCurrent",
+            "type": "int"
+        }, {
+            "name": "MentionedEventsFuture",
+            "type": "int"
+        }, {
+            "name": "EventsCountsPastAvg",
+            "type": "float"
+        }, {
+            "name": "ArticlesCountsPastAvg",
+            "type": "float"
+        }, {
+            "name": "EventsCountsPastMin",
+            "type": "int"
+        }, {
+            "name": "EventsCountsPastMax",
+            "type": "int"
+        }, {
+            "name": "ArticlesCountsPastMax",
+            "type": "int"
+        }, {
+            "name": "ArticlesCountsPastMin",
+            "type": "int"
+        },{
+            "name": "MentionedEventsFuture1",
+            "type": "int"
+        },{
+            "name": "MentionedEventsFuture2",
+            "type": "int"
+        },{
+            "name": "MentionedEventsFuture3",
+            "type": "int"
+        },{
+            "name": "MentionedEventsFuture4",
+            "type": "int"
+        },{
+            "name": "MentionedEventsFuture5",
+            "type": "int"
+        },{
+            "name": "MentionedEventsFuture6",
+            "type": "int"
+        },{
+            "name": "MentionedEventsFuture7",
+            "type": "int"
+        },{
+            "name": "MentionedArticlesFuture1",
+            "type": "int"
+        },{
+            "name": "MentionedArticlesFuture2",
+            "type": "int"
+        },{
+            "name": "MentionedArticlesFuture3",
+            "type": "int"
+        },{
+            "name": "MentionedArticlesFuture4",
+            "type": "int"
+        },{
+            "name": "MentionedArticlesFuture5",
+            "type": "int"
+        },{
+            "name": "MentionedArticlesFuture6",
+            "type": "int"
+        },{
+            "name": "MentionedArticlesFuture7",
+            "type": "int"
+        }
+    ],
+    "keys": [
+        {
+            "field": "EventFeatureId",
+            "type": "value"
+        }, {
+            "field": "KeywordId",
+            "type": "value"
+        }, {
+            "field": "Region",
+            "type": "value"
+        }, {
+            "field": "LocationUri",
+            "type": "value"
+        }, {
+            "field": "ConceptUri",
+            "type": "value"
+        }, {
+            "field": "Timestamp",
+            "type": "linear"
+        }
+    ]
+}

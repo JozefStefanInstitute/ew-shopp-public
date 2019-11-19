@@ -83,14 +83,19 @@ function getGroupIds(arr, keyFn) {
     return groupIds;
 }
 
-function getKey(primaryKey, obj, allowedKeys = null, keepOnlyDate = true) {
+function getKey(primaryKey, obj, allowedKeys = null, keepOnlyDate = true, forecastOffset = null) {
     let key = {};
     let usedKeys = new Set();
     primaryKey.forEach(pk => {
         if ((allowedKeys == null || allowedKeys.has(pk)) && pk in obj) {
             usedKeys.add(pk);
-            if (obj[pk] instanceof Date && keepOnlyDate) {
-                key[pk] = keepDate(obj[pk]).valueOf();
+            if (obj[pk] instanceof Date) {
+                let val = obj[pk];
+                // If the offset is negative it means that the features are from n-th day before.
+                // Therefore, features are valid for the n-th day in the future.
+                val = forecastOffset ? addDays(val, -forecastOffset) : val;
+                val = keepOnlyDate ? keepDate(val).valueOf() : val;
+                key[pk] = val;
             } else {
                 key[pk] = obj[pk].valueOf();
             }
@@ -136,7 +141,7 @@ const HOLIDAYS = new Set([
 ]);
 
 function getDayOfWeek(date) {
-    return DOW[new Date(date).getDay()];
+    return DOW[new Date(date).getDay()].toLowerCase();
 }
 
 function isHoliday(date) {
@@ -188,33 +193,108 @@ function getDateString(date) {
     return year + "-" + month + "-" + dt;
 }
 
-function addDays(dateTime, nDays) {
+function addHours(dateTime, nHours = 1) {
+    let curr = new Date(dateTime);
+    curr.setHours(curr.getHours() + nHours);
+    return curr;
+}
+
+function addDays(dateTime, nDays = 1) {
     let curr = new Date(dateTime);
     curr.setDate(curr.getDate() + nDays);
     return curr;
 }
 
+function addMonths(dateTime, nMonth = 1) {
+    let curr = new Date(dateTime);
+    curr.setMonth(curr.getMonth() + nMonth);
+    return curr;
+}
+
+function getTimeframes(dateStart, dateEnd, aggregateNDays = 1, startDayName = "sun", cut = false) {
+    const DOWLowerCase = DOW.map(u => u.toLowerCase());
+    const getDiffDayFn = (currentDay, interestedDay) => {
+        let dayCurrIndex = DOWLowerCase.indexOf(getDayOfWeek(currentDay));
+        let dayInterestedIndex = DOWLowerCase.indexOf(interestedDay.toLowerCase());
+        return dayInterestedIndex - dayCurrIndex;
+    };
+
+    let currDateKd = keepDate(dateStart);
+    let dateEndKd = keepDate(dateEnd);
+    // Set to interested start day and fix end date
+    if (aggregateNDays !== 1) {
+        let diffStart = getDiffDayFn(currDateKd, startDayName);
+        let diffEnd = getDiffDayFn(dateEndKd, startDayName);
+        diffStart = diffStart > 0 ? (cut ? diffStart : diffStart - aggregateNDays) :
+            diffStart < 0 ? (cut ? aggregateNDays - diffStart : diffStart) :
+                diffStart;
+        diffEnd = diffEnd > 0 ? (cut ? diffEnd - aggregateNDays : diffEnd) :
+            diffEnd < 0 ? (cut ? diffEnd : diffEnd + aggregateNDays) :
+                diffEnd;
+        currDateKd = addDays(currDateKd, diffStart);
+        dateEndKd = addDays(dateEndKd, diffEnd);
+    } else if (aggregateNDays === 1) {
+        dateEndKd = addDays(dateEndKd, 1); // Include last day
+    }
+
+    const timeframes = [];
+    while (currDateKd < dateEndKd) {
+        let timeframe = {
+            dateStart: currDateKd,
+            dateEnd: addDays(currDateKd, aggregateNDays)
+        };
+        timeframes.push(timeframe);
+        currDateKd = keepDate(timeframe.dateEnd);
+    }
+
+    return timeframes;
+}
+
 //======================================================================================================================
 // I/O
 //======================================================================================================================
-function existsFile(path) {
-    return nodeFs.existsSync(path) && nodeFs.lstatSync(path).isFile();
+function existsFile(path, warn = false) {
+    path = path.toString();
+    const exists = nodeFs.existsSync(path) && nodeFs.lstatSync(path).isFile();
+    if (warn && !exists) console.warn(`File '${path}' does not exist`);
+    return exists;
 }
 
-function existsDir(path) {
-    return nodeFs.existsSync(path) && nodeFs.lstatSync(path).isDirectory();
+function existsDir(path, warn = false) {
+    path = path.toString();
+    const exists = nodeFs.existsSync(path) && nodeFs.lstatSync(path).isDirectory();
+    if (warn && !exists) console.warn(`Directory '${path}' does not exist`);
+    return exists;
 }
 
-function extractPaths(paths) {
+function createDir(dirPath, isDir = true) {
+    let dirName = isDir ? dirPath : path.dirname(dirPath);
+    if (!existsDir(dirName)) {
+        nodeFs.mkdirSync(dirName, { recursive: true });
+        console.log(`Directory ${dirName} created.`);
+    }
+    return dirName;
+}
+
+function extractPaths(paths, depth = 1, extract_dir = false) {
+    assert.deepStrictEqual(Array.isArray(paths), true, "Paths must be in an array!");
     let filePaths = new Set();
     for (let confPath of paths) {
         if (existsFile(confPath)) {
             // File exists - no problem
             filePaths.add(path.normalize(confPath));
         } else if (existsDir(confPath)) {
-            // Check if folder and get all file paths in the current folder
+            // Check if folder and get all file paths in the current folder - just one depth - no recursion
             let lstFiles = nodeFs.readdirSync(confPath);
-            lstFiles.forEach(file => filePaths.add(path.join(confPath, file)));
+            lstFiles.forEach(file => {
+                let filePath = path.join(confPath, file);
+                if (existsFile(filePath)) {
+                    filePaths.add(filePath);
+                } else if (existsDir(filePath)) {
+                    if (extract_dir) filePaths.add(path.normalize(filePath));
+                    if (depth > 1) extractPaths([filePath], depth - 1).forEach(filePaths.add, filePaths);
+                }
+            });
         } else {
             // File/Folder not found - warn
             console.warn(`Path '${confPath}' does not exists!`);
@@ -224,10 +304,54 @@ function extractPaths(paths) {
     return [...filePaths];
 }
 
+function saveToTsv(outPath, data, createHeader = false, addJoins = false, internalId = false, useColumns = null) {
+    const fout = new fs.FOut(outPath);
+
+    console.log("Writing to " + outPath);
+    let fields = [];
+    if (data instanceof qm.RecSet) {
+        if (internalId) fields.push("$id");
+        data.store.fields.forEach(x => fields.push(x.name));
+        fields = fields.filter((field) => {return useColumns.includes(field)});
+        if (addJoins) data.store.joins.forEach(x => {if (x.type === "field") fields.push(x.recordField)});
+    } else {
+        fields = useColumns;
+    }
+
+    const processRecordFn = (rec) => {
+        let line = "";
+        for (let i = 0; i < fields.length; i++) {
+            if (fields[i] === "Timestamp") {
+                line += new Date(getDateString(rec[fields[i]])).toISOString() + "\t";
+            } else {
+                let val = rec[fields[i]];
+                val = !isNaN(val) ? Number.parseFloat(val).toFixed(5) : val;
+                line += val + "\t";
+            }
+        }
+        fout.writeLine(line);
+    };
+
+    if (createHeader) {
+        let headerLine = "";
+        for (let i = 0; i < fields.length; i++) {
+            headerLine += fields[i] + "\t";
+        }
+        fout.writeLine(headerLine);
+    }
+
+    if (data instanceof qm.RecSet) {
+        data.each(processRecordFn);
+    } else {
+        data.forEach(processRecordFn);
+    }
+    fout.close();
+}
+
 function saveToJson(outPath, data) {
     console.log("Writing to " + outPath);
     let fout = new fs.FOut(outPath);
-    fout.write(JSON.stringify(data));
+    fout.write(JSON.stringify(data, null, 4));
     fout.close();
 }
 
@@ -236,6 +360,19 @@ function loadFromJson(inPath) {
     let conf = JSON.parse(confFile.readAll());
     confFile.close();
     return conf;
+}
+
+function replaceValueInObj(obj, fromVal, toVal, returnOrginalVal = false) {
+    // Note: object must be without function calls, a Date object will be converted to UTC ISO8601 format,
+    // it does not work on circular references -- every value will be converted to string and parsed back
+    let objString = JSON.stringify(obj);
+    let modifiedQuery = objString.replace(new RegExp(fromVal, "g"), toVal);
+    if (returnOrginalVal) {
+        let areTheSame = objString === modifiedQuery;
+        return [JSON.parse(modifiedQuery), JSON.parse(objString), areTheSame];
+    } else {
+        return JSON.parse(modifiedQuery);
+    }
 }
 
 function readCsvFile(filename, fn) {
@@ -271,6 +408,24 @@ function readCsvFile(filename, fn) {
         }
     );
     file.close()
+}
+
+function startSection(msg, group = true) {
+    let len = 71 - msg.length;
+    let len1 = len / 2,
+        len2 = len1 + (len % 2);
+    const str = `${"========================================".substr(0, len1)} ${msg} ${"========================================"
+        .substr(0, len2)}`;
+    if (group) {
+        console.group(str);
+    } else {
+        console.log(str);
+    }
+}
+
+function endSection(group = true) {
+    if (group) console.groupEnd();
+    console.log("=========================================================================");
 }
 
 function log(msg, file = null) {
@@ -355,6 +510,27 @@ function getStore(base, storeName) {
     return store;
 }
 
+function pushToStore(base, storeName, record, primaryFields = null) {
+    if (primaryFields !== null) {
+        if (existDuplicate(base, storeName, record, primaryFields)) {
+            console.warn("Duplicate!");
+            return;
+        }
+    }
+    base.store(storeName).push(record);
+}
+
+function existDuplicate(base, storeName, record, primaryFields = null) {
+    let found = base.search({
+        $from: storeName,
+        ...primaryFields.reduce((obj, field) => {
+            obj[field] = record[field];
+            return obj;
+        }, {})
+    });
+    return !found.empty
+}
+
 function getFilteredRecords(base, params) {
     console.time("Filter data");
 
@@ -430,8 +606,9 @@ function getRecordSetInfo(recordSet, N = 3, cols = []) {
 //======================================================================================================================
 function modelPredict(clf, X) {
     let y_pred = [];
-    for (let i = 0; i < X.cols; i++)
+    for (let i = 0; i < X.cols; i++) {
         y_pred.push(clf.predict(X.getCol(i)));
+    }
     y_pred = qm.la.Vector(y_pred);
     return y_pred;
 }
@@ -446,8 +623,9 @@ function countPosNeg(y) {
 
 function argmax(arr) {
     let mpos = -1;
-    for (let i = 0; i < arr.length; i++)
+    for (let i = 0; i < arr.length; i++) {
         if (mpos === -1 || arr[i] > arr[mpos]) mpos = i;
+    }
     return mpos;
 }
 
@@ -456,13 +634,14 @@ function argmax2d(arr, axis) {
         + axis + " > 1");
     let res = [];
     if (axis === 1) {
-        for (let i = 0; i < arr.length; i++)
+        for (let i = 0; i < arr.length; i++) {
             res.push(argmax(arr[i]));
-    }
-    else if (axis === 0) {
+        }
+    } else if (axis === 0) {
         let maxlen = 0, mpos = -1;
-        for (let i = 0; i < arr.length; i++)
+        for (let i = 0; i < arr.length; i++) {
             maxlen = Math.max(maxlen, arr[i].length);
+        }
         for (let j = 0; j < maxlen; j++) {
             mpos = -1;
             for (let i = 0; i < arr.length; i++) {
@@ -511,7 +690,7 @@ function getDailySeries(series, startDate, endDate, convertToList = true, wholeI
     return count ? [aggr, aggrN] : aggr;
 }
 
-function getAccumVal(list, field, date, nDays, forward = true) {
+function getAccumVal(list, field, date, nDays, forward = true, dateInISOString = false) {
     // If list transform to object.
     // Transform [[<timestamp>, <value>], ...] to {<timestamp>: <value>, ...}
     let obj = {};
@@ -524,8 +703,9 @@ function getAccumVal(list, field, date, nDays, forward = true) {
     let iterDate = new Date(date);
     let sum = 0.0, n = 0, completeInterval = true;
     for (let i = 0; i < nDays; i++) {
-        if (iterDate in obj) {
-            sum += obj[iterDate][field] > 0 ? obj[iterDate][field] : 0;
+        let iterDateKey = dateInISOString ? iterDate.toISOString() : iterDate;
+        if (iterDateKey in obj) {
+            sum += obj[iterDateKey][field] > 0 ? obj[iterDateKey][field] : 0;
             n++;
         } else if (i === nDays - 1) {
             // Check if exist any date before or after last day of the interval - if true mark as complete
@@ -575,10 +755,11 @@ function computeJ(y) {
 module.exports = {
     objToList, getProperty, toArray, findRangeNext, groupBy, getGroupIds, getKey, cloneObj, shuffle,
     getDayOfWeek, isHoliday, getMonthStr, getSeason, daysDiff, sameDate, keepDate, getDateString, addDays,
-    existsFile, existsDir, extractPaths, saveToJson, loadFromJson, readCsvFile, log, showProgress, ExitHandler,
-    getStore, getFilteredRecords, getRecordSetInfo,
+    existsFile, existsDir, extractPaths, saveToJson, saveToTsv, loadFromJson, replaceValueInObj, readCsvFile,
+    log, showProgress, endSection, startSection, createDir,
+    ExitHandler, getStore, pushToStore, existDuplicate, getFilteredRecords, getRecordSetInfo,
     modelPredict, countPosNeg, argmax, argmax2d, getDailySeries, getAccumVal, minmaxScaleDailySeries,
-    yearlymaxScaleDailySeries, computeJ
+    yearlymaxScaleDailySeries, computeJ, addMonths, addHours, getTimeframes
 };
 
 // Tests

@@ -1,0 +1,258 @@
+[
+    {
+        "name": "LocationUris",
+        "fields": [
+            {
+                "name": "Location",
+                "type": "string",
+                "primary": true
+            }, {
+                "name": "LocationUri",
+                "type": "string",
+                "shortstring": true,
+                "codebook": true
+            }
+        ],
+        "keys": [
+            {
+                "field": "Location",
+                "type": "value"
+            }, {
+                "field": "LocationUri",
+                "type": "value"
+            }
+        ]
+    }, {
+    "name": "ConceptUris",
+    "fields": [
+        {
+            "name": "Concept",
+            "type": "string",
+            "primary": true
+        }, {
+            "name": "ConceptUri",
+            "type": "string",
+            "shortstring": true,
+            "codebook": true
+        }
+    ],
+    "keys": [
+        {
+            "field": "Concept",
+            "type": "value"
+        }, {
+            "field": "ConceptUri",
+            "type": "value"
+        }
+    ]
+}, {
+    "name": "Events",
+    "fields": [
+        {
+            "name": "ConceptUri",
+            "type": "string",
+            "shortstring": true,
+            "codebook": true
+        }, {
+            "name": "LocationUri",
+            "type": "string_v"
+        }, {
+            "name": "Date",
+            "type": "datetime"
+        }, {
+            "name": "Count",
+            "type": "int"
+        }
+    ],
+    "keys": [
+        {
+            "field": "ConceptUri",
+            "type": "value"
+        }, {
+            "field": "LocationUri",
+            "type": "value"
+        }, {
+            "field": "Date",
+            "type": "linear"
+        }, {
+            "field": "Count",
+            "type": "linear"
+        }
+    ]
+}, {
+    "name": "EventsCounts",
+    "fields": [
+        {
+            "name": "ConceptUri",
+            "type": "string",
+            "shortstring": true,
+            "codebook": true
+        }, {
+            "name": "LocationUri",
+            "type": "string_v"
+        }, {
+            "name": "Date",
+            "type": "datetime"
+        }, {
+            "name": "Count",
+            "type": "int"
+        }
+    ],
+    "joins": [
+        {
+            "name": "hasMentionedDates",
+            "type": "index",
+            "store": "EventsCountsMentioned",
+            "inverse": "onDate"
+        }
+    ],
+    "keys": [
+        {
+            "field": "ConceptUri",
+            "type": "value"
+        }, {
+            "field": "LocationUri",
+            "type": "value"
+        }, {
+            "field": "Date",
+            "type": "linear"
+        }, {
+            "field": "Count",
+            "type": "linear"
+        }
+    ]
+}, {
+    "name": "Articles",
+    "fields": [
+        {
+            "name": "ConceptUri",
+            "type": "string",
+            "shortstring": true,
+            "codebook": true
+        }, {
+            "name": "LocationUri",
+            "type": "string_v"
+        }, {
+            "name": "Date",
+            "type": "datetime"
+        }, {
+            "name": "Count",
+            "type": "int"
+        }
+    ],
+    "keys": [
+        {
+            "field": "ConceptUri",
+            "type": "value"
+        }, {
+            "field": "LocationUri",
+            "type": "value"
+        }, {
+            "field": "Date",
+            "type": "linear"
+        }, {
+            "field": "Count",
+            "type": "linear"
+        }
+    ]
+}, {
+    "name": "ArticlesCounts",
+    "fields": [
+        {
+            "name": "ConceptUri",
+            "type": "string",
+            "shortstring": true,
+            "codebook": true
+        }, {
+            "name": "LocationUri",
+            "type": "string_v",
+            "null": true
+        }, {
+            "name": "Date",
+            "type": "datetime"
+        }, {
+            "name": "Count",
+            "type": "int"
+        }
+    ],
+    "joins": [
+        {
+            "name": "hasMentionedDates",
+            "type": "index",
+            "store": "ArticlesCountsMentioned",
+            "inverse": "onDate"
+        }
+    ],
+    "keys": [
+        {
+            "field": "ConceptUri",
+            "type": "value"
+        }, {
+            "field": "LocationUri",
+            "type": "value"
+        }, {
+            "field": "Date",
+            "type": "linear"
+        }, {
+            "field": "Count",
+            "type": "linear"
+        }
+    ]
+}, {
+    "name": "ArticlesCountsMentioned",
+    "fields": [
+        {
+            "name": "DateMentioned",
+            "type": "datetime"
+        }, {
+            "name": "Count",
+            "type": "int"
+        }
+    ],
+    "joins": [
+        {
+            "name": "onDate",
+            "type": "field",
+            "store": "ArticlesCounts",
+            "inverse": "hasMentionedDates"
+        }
+    ],
+    "keys": [
+        {
+            "field": "DateMentioned",
+            "type": "linear"
+        }, {
+            "field": "Count",
+            "type": "linear"
+        }
+    ]
+}, {
+    "name": "EventsCountsMentioned",
+    "fields": [
+        {
+            "name": "DateMentioned",
+            "type": "datetime"
+        }, {
+            "name": "Count",
+            "type": "int"
+        }
+    ],
+    "joins": [
+        {
+            "name": "onDate",
+            "type": "field",
+            "store": "EventsCounts",
+            "inverse": "hasMentionedDates"
+        }
+    ],
+    "keys": [
+        {
+            "field": "DateMentioned",
+            "type": "linear"
+        }, {
+            "field": "Count",
+            "type": "linear"
+        }
+    ]
+}
+]

@@ -40,10 +40,17 @@ function exec(params, base, featureList) {
     console.log(params["feature_store"]);
     let featureRecords = base.store(params["feature_store"]).allRecords;
 
+    if (featureRecords.length === 0) {
+        let e = Error("No feature records in the feature store. " + params["feature_store"] +
+            " " + params["input_store"]);
+        e.name = "NoFeatures";
+        throw e;
+    }
+
     /*
-    * Check (featureList.length > 0) is weird but when base containing features
-    * is not filled by the pipeline (but given beforehand) we have no featureList
-    */
+     * Check (featureList.length > 0) is weird but when base containing features
+     * is not filled by the pipeline (but given beforehand) we have no featureList
+     */
     if (params["pipeline_mode"] === "predict" && featureList.length > 0) {
         // Point of weirdness
         // Can not extract matrix - check
@@ -71,23 +78,64 @@ function exec(params, base, featureList) {
 
         // Save cs output and features scores
         let scoreFout = qm.fs.openWrite(params["model_scores"]);
+        if (params["grid_search"] === true) {
+            const gridParams = {
+                type: ["EPSILON_SVR"],
+                algorithm: ["LIBSVM"],
+                kernel: ["RBF"],
+                c: [1.0, 2.0, 10.0, 100.0, 150.0, 200.0],
+                j: [1.0],
+                gamma: [1.0, 0.1, 0.01, 0.001],
+                eps: [0.001, 0.01],
+                p: [0.01, 0.1],
+                degree: [1, 2, 3, 4, 5],
+                maxIterations: [200000],
+                batchSize: [10000],
+                maxTime: [3],
+                cacheSize: [800]
+            };
 
-        let modelWeights = clf.weights.toArray();
-        modelWeights = modelWeights.map((x, x_i) => [x, x_i]);
-        modelWeights.sort((x1, x2) => -(x1[0] - x2[0]));
-        for (let x of modelWeights.slice(0, 5)) {
-            utils.log(x[0].toFixed(7).padEnd(11) + " " + ftr.getFeature(x[1]), scoreFout);
+            let numOfComb = Object.values(gridParams).reduce((acc, a) => {return acc * a.length}, 1.0);
+            console.log("Grid search [" + numOfComb + "]");
+            let i = 1;
+            const scoreFn = function (comb, X, y) {
+                let scores = [], sumR2 = 0.0;
+                utils.showProgress(`${(i++ / numOfComb * 100.0).toFixed(2)}%`);
+                modelSelection.kFoldVal(X, y, 10,
+                    function (xTrain, yTrain, xTest, yTest, xVal, yVal) {
+                        let clf = new qm.analytics.SVR(comb);
+
+                        clf.fit(xTrain, yTrain);
+
+                        let yValPred = utils.modelPredict(clf, xVal);
+                        let valScore = qm.analytics.metrics.r2Score(yVal, yValPred);
+                        sumR2 += valScore;
+
+                        let yPred = utils.modelPredict(clf, xTest);
+                        let score = qm.analytics.metrics.r2Score(yTest, yPred);
+                        scores.push(score);
+                    }, 0.3);
+
+                return { score: sumR2, scores: scores }
+            };
+            let gridRes = modelSelection.gridSearch(gridParams, (comb) => scoreFn(comb, X, y));
+            utils.log(`Best combination: : ${JSON.stringify(gridRes.comb)}`, scoreFout);
+            utils.log(`Score: : ${gridRes.score}`, scoreFout);
+            utils.log("Grid scores: ", scoreFout);
+            for (let score of gridRes.scores) {
+                utils.log(`R2Score: ${score}`, scoreFout);
+            }
+            utils.log("============", scoreFout);
+            clf = new qm.analytics.SVR(gridRes.comb);
         }
 
-        for (let x of modelWeights.slice(-5)) {
-            utils.log(x[0].toFixed(7).padEnd(11) + " " + ftr.getFeature(x[1]), scoreFout);
-        }
+        clf.fit(X, y);
 
         // Cross-validation and model testing code goes here :)
         if (params["score"] === "cv") {
             let foldFn = getFoldFn(params);
             if (params["verbose"]) console.time("KFold test");
-            let foldRes = modelSelection.kFold(X, y, 20, foldFn, true);
+            let foldRes = modelSelection.kFold(X, y, y.length > 10 ? 10 : y.length, foldFn, true);
             if (params["verbose"]) console.timeEnd("KFold test");
 
             let yTrue = new qm.la.Vector(),
@@ -103,21 +151,26 @@ function exec(params, base, featureList) {
             utils.log(`RMSE: ${qm.analytics.metrics.rootMeanSquareError(yTrue, yPred)}`, scoreFout);
             utils.log(`R2Score: ${qm.analytics.metrics.r2Score(yTrue, yPred)}`, scoreFout);
 
-            var yPredCv = yPred; 
+            var yPredCv = yPred; // TODO: fix
         }
 
-        clf.fit(X, y);
         if (params["verbose"]) {
             let modelWeights = clf.weights.toArray();
             modelWeights = modelWeights.map((x, x_i) => [x, x_i]);
             modelWeights.sort((x1, x2) => -(x1[0] - x2[0]));
             console.log("Number of features:", modelWeights.length);
-            for (let x of modelWeights.slice(0, 5)) {
-                utils.log(x[0].toFixed(7).padEnd(11) + " " + ftr.getFeature(x[1]), scoreFout);
-            }
+            if (params["show_all_weights"] === true) {
+                for (let x of modelWeights) {
+                    utils.log(x[0].toFixed(7).padEnd(11) + " " + ftr.getFeature(x[1]), scoreFout);
+                }
+            } else {
+                for (let x of modelWeights.slice(0, 5)) {
+                    utils.log(x[0].toFixed(7).padEnd(11) + " " + ftr.getFeature(x[1]), scoreFout);
+                }
 
-            for (let x of modelWeights.slice(-5)) {
-                utils.log(x[0].toFixed(7).padEnd(11) + " " + ftr.getFeature(x[1]), scoreFout);
+                for (let x of modelWeights.slice(-5)) {
+                    utils.log(x[0].toFixed(7).padEnd(11) + " " + ftr.getFeature(x[1]), scoreFout);
+                }
             }
         }
         scoreFout.close();
@@ -133,7 +186,7 @@ function exec(params, base, featureList) {
     let yPred = utils.modelPredict(clf, X);
     if (typeof yPredCv !== "undefined") {
         yPred = yPredCv;
-        console.log("WARNING: Using CV predictions.");
+        console.warn("WARNING: Using CV predictions.");
     }
 
     // Copy all Input fields and add Value field if it is not already present

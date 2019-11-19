@@ -2,20 +2,10 @@
 
 const qm = require("qminer");
 const assert = require("assert");
+const utils = require("../../util/utils");
 
-function exec(params, base) {
-    const inputBase = new qm.Base({ mode: "openReadOnly", dbPath: params["input_db"] });
-    let recs, store;
 
-    // Apply filter if provided
-    if (params["search_query"] != null) {
-        recs = inputBase.search(params["search_query"]);
-        store = recs.store;
-    } else {
-        store = inputBase.store(params["input_store"]);
-        recs = store.allRecords;
-    }
-
+function createNewStore(base, store, params) {
     assert.ok("input" in params);
     // Auto generate target fields with names matching primary keys
     // Create fields with names defined in params.input
@@ -43,24 +33,78 @@ function exec(params, base) {
         name: params["target_store"] ? params["target_store"] : "Input",
         fields: fields
     });
+    return [targetStore, fields];
+}
 
+function exec(params, base) {
+    const inputBase = new qm.Base({ mode: "openReadOnly", dbPath: params["input_db"] });
+    let recs, inputStore;
+
+    // Set search query corresponding to the mode ({fit|predict})
+    let searchQuery = "search_query_" + params["mode"];
+    let searchQueryGiven = false;
+    if (params[searchQuery] != null) {
+        searchQueryGiven = true;
+    } else if (params["search_query"] != null) {
+        searchQuery = "search_query";
+        searchQueryGiven = true;
+    }
+
+
+    console.log(`Input extractor is using '${searchQuery}'.`);
+    // Apply filter if provided
+    if (searchQueryGiven) {
+        recs = inputBase.search(params[searchQuery]);
+        inputStore = recs.store;
+    } else if (params["input_store"] != null) {
+        // Look for all records in the input store
+        inputStore = inputBase.store(params["input_store"]);
+        recs = inputStore.allRecords;
+    } else {
+        throw Error("Input extractor can not extract input - no 'search_query' or 'input_store' provided.");
+    }
+
+    if (params["sample"] != null) {
+        recs = recs.sample(params["sample"]);
+    }
+
+    let [targetStore, fields] = createNewStore(base, inputStore, params);
+    let minVal = 0;
+    if (params["positive"] === true) {
+        minVal = Math.abs(Math.min(...recs.getVector(params["target_var"]).toArray()));
+        console.log(minVal);
+    }
     recs.each(r => {
         let rec = {
             /*
-                Timestamp: utils.keepDate(x["Date"]),
-                Value: x[params["target_var"]]
-            */
+             Timestamp: utils.keepDate(x["Date"]),
+             Value: x[params["target_var"]]
+             */
         };
         let targetVar = params["target_var"];
+        let targetVal = r[targetVar];
+        if (params["positive"] === true && targetVal < 0.0) {
+            targetVal += minVal;
+        }
+
         // Primary key mapping
         fields.forEach(field => {
-            rec[field.name] = field.name === "Value" ? r[targetVar] : r[field.name];
+            if(field.name === "Value"){
+                rec[field.name] = targetVal;
+            } else {
+                rec[field.name] = r[field.name];
+                if (field.name === "Timestamp" && params["forecast_offset"]) {
+                    rec[field.name]  = utils.addDays(rec[field.name] , params["forecast_offset"]);
+                }
+            }
         });
 
         if (params["thresh"]) {
-            if (params["thresh"].length === 1) rec["Value"] = r[targetVar] >= params["thresh"][0] ? 1 : -1;
+            if (params["thresh"].length === 1) {
+                rec["Value"] = targetVal >= params["thresh"][0] ? 1 : -1;
+            }
             if (params["thresh"].length === 2) {
-                rec["Value"] = r[targetVar] <= params["thresh"][0] ? -1 : r[targetVar] >= params["thresh"][1] ? 1 : 0;
+                rec["Value"] = targetVal <= params["thresh"][0] ? -1 : targetVal >= params["thresh"][1] ? 1 : 0;
             }
 
             if (rec["Value"] !== 0) targetStore.push(rec);

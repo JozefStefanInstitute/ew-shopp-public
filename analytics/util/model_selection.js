@@ -31,11 +31,18 @@ function kFoldVal(X, y, k = 3, trainFn, valSize = 0.3) {
     for (let i = 0; i < nSamples; i++) ind.push(i);
 
     let shuff = utils.shuffle(ind);
-    let foldSize = Math.ceil(1.0 * nSamples / k);
-    for (let tk = 0; tk < k; tk++) {
-        let testInd = new qm.la.IntVector(shuff.filter((v, i) => i >= tk * foldSize && i < (tk + 1) * foldSize));
 
-        let otherInd = shuff.filter((v, i) => i < tk * foldSize || i >= (tk + 1) * foldSize);
+    let nLargeFolds = nSamples % k;
+    let smallFold = Math.floor(nSamples / k);
+    let currFoldDownBound = 0;
+    let currFoldUpBound = smallFold;
+    if (nLargeFolds > 0) {
+        currFoldUpBound += 1;
+        nLargeFolds--;
+    }
+    for (let tk = 0; tk < k; tk++) {
+        let testInd = new qm.la.IntVector(shuff.filter((v, i) => i >= currFoldDownBound && i < currFoldUpBound));
+        let otherInd = shuff.filter((v, i) => i < currFoldDownBound || i >= currFoldUpBound);
         let tmpShuff = utils.shuffle(otherInd);
 
         let valPos = Math.floor(valSize * tmpShuff.length);
@@ -43,7 +50,11 @@ function kFoldVal(X, y, k = 3, trainFn, valSize = 0.3) {
         let trainInd = new qm.la.IntVector(tmpShuff.slice(valPos));
 
         trainFn(X.getColSubmatrix(trainInd), y.subVec(trainInd),
-            X.getColSubmatrix(testInd), y.subVec(testInd), X.getColSubmatrix(validInd), y.subVec(validInd), trainInd, testInd, validInd);
+            X.getColSubmatrix(testInd), y.subVec(testInd), X.getColSubmatrix(validInd), y.subVec(validInd),
+            trainInd, testInd, validInd);
+
+        currFoldDownBound = currFoldUpBound;
+        currFoldUpBound += (tk < nLargeFolds ? (smallFold+1) : smallFold);
     }
 }
 
@@ -73,7 +84,7 @@ function leaveOneGroupOutIter(groups) {
     return {
         next: function (X, y) {
             if (groupIdx == uniqueGroups.length)
-                return {done: true};
+                return { done: true };
 
             let outGroup = uniqueGroups[groupIdx];
             groupIdx++;
@@ -171,7 +182,7 @@ function gridSearch(params, scoreFn) {
             bestScores = combScore.scores;
         }
     }
-    return {comb: bestComb, score: bestScore, scores: bestScores};
+    return { comb: bestComb, score: bestScore, scores: bestScores };
 }
 
 module.exports = {

@@ -78,6 +78,9 @@ function exec(params) {
         allSpans.push({ date: new Date(currDate.valueOf()) });
 
     // Create new instance of QMiner base containing all features (schema is sketched above ^)
+    if (!utils.existsDir(params["output_db"]))
+        utils.createDir(params["output_db"]);
+
     let featuresBase = new qm.Base({
         mode: params["output_db_mode"] ? params["output_db_mode"] : "createClean",
         dbPath: params["output_db"]
