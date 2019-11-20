@@ -7,6 +7,8 @@ import csv
 import argparse
 import pdb
 
+from tqdm import tqdm
+
 # !pip install googletrans
 from googletrans import Translator
 
@@ -37,24 +39,28 @@ def translate_categories(categories, source_language, destination_language):
     word_map = {}
     current_word = 0
     # go over all words
-    while current_word < len(words):
-        text = ""
+    with tqdm(total=len(words)) as pbar:
+        while current_word < len(words):
+            text = ""
 
-        # collect batches of up to 1000 words split by newlines
-        freeze_position = current_word
-        while current_word < len(words) and len(text) < 1000:
-            text += words[current_word] + "\n"
-            current_word += 1
+            # collect batches of up to 1000 words split by newlines
+            freeze_position = current_word
+            while current_word < len(words) and len(text) < 1000:
+                text += words[current_word] + "\n"
+                current_word += 1
 
-        # send batch to translate and split the result
-        translated_text = t.translate(
-            text,
-            src = source_language,
-            dest = destination_language
-        ).text.split('\n')
-        # map the word to its translation
-        for i in range(freeze_position, current_word):
-            word_map[words[i]] = translated_text[i - freeze_position]
+            # send batch to translate and split the result
+            translated_text = t.translate(
+                text,
+                src = source_language,
+                dest = destination_language
+            ).text.split('\n')
+            # map the word to its translation
+            for i in range(freeze_position, current_word):
+                word_map[words[i]] = translated_text[i - freeze_position]
+
+            pbar.update(current_word - freeze_position)
+    
     # empty is empty
     word_map[''] = ''
 
