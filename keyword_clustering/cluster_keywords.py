@@ -112,7 +112,7 @@ def sif_embedding(keywords, model, word_frequencies, n_principal_components=1, a
 
     # calculate weighted average of word embeddings
     embs = np.zeros((len(keywords), 300))
-    for i, keyword in enumerate(keywords):
+    for i, keyword in enumerate(tqdm(keywords)):
         words = tokenize(keyword)
 
         # What should be the weight of a word not present in the training corpus (in word_frequencies table)?
