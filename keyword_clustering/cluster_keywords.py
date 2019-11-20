@@ -82,7 +82,12 @@ def load_csv_column(path, column_name, delimiter=','):
                 column_index = keyword_header.index(column_name)
             else:
                 # get the correct field
-                fields.append(row[column_index])
+                try:
+                    fields.append(row[column_index])
+                except Exception as e:
+                    print("\n!!! ERROR !!!\nRow[%d]: %s\n" % (line_count, row))
+                    raise e
+
             line_count += 1
     return fields
 
@@ -399,7 +404,7 @@ class Categorizer(object):
         if self.category_ids is not None:
             for row_i, row in enumerate(results):
                 results[row_i] = [
-                    (f"{category_name}[{self.category_ids[category_name]}]", distance)
+                    (category_name, self.category_ids[category_name], distance)
                     for category_name, distance in row
                 ]
 
