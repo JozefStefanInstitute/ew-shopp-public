@@ -61,16 +61,15 @@ def main_categorise(args):
         # write header
         out_header = ["keyword"]
         for cat_i in range(1, n_categories + 1):
-            out_header.extend([f"category{cat_i}", f"category{cat_i}_distance"])
+            out_header.extend([f"category{cat_i}_id", f"category{cat_i}", f"category{cat_i}_distance"])
         outwriter.writerow(out_header)
 
         # write results row by row
         for keyword, categories in zip(keywords, keyword_categories):
             row = [f"{keyword}"]
-            for category, distance in categories:
-                row.extend([f"{category}", f"{distance}"])
+            for category, id, distance in categories:
+                row.extend([f"{id}", f"{category}", f"{distance}"])
             outwriter.writerow(row)
-
 
     print("DONE!")
 
