@@ -9,7 +9,7 @@ import re
 import csv
 from collections import Counter
 
-import fastText
+import fasttext
 import numpy as np
 from tqdm import tqdm
 
@@ -24,14 +24,14 @@ def load_FT_model(path):
         path: Path to FastText word vectors binary file.
 
     Returns:
-        fastText model object.
+        fasttext model object.
     """
-    return fastText.load_model(path)
+    return fasttext.load_model(path)
 
 
 def tokenize(keyword):
     """
-    Tokenizes using default fastText tokenizer.
+    Tokenizes using default fasttext tokenizer.
 
     Args:
         keyword: Keyword string (can be multi-word phrase!).
@@ -39,7 +39,7 @@ def tokenize(keyword):
     Returns:
         List of words (tokens) from the keyword.
     """
-    return fastText.tokenize(keyword)
+    return fasttext.tokenize(keyword)
 
 
 def count_word_frequencies(keywords):
@@ -224,7 +224,7 @@ class SIFEmbedder(object):
     def serialize(self):
         """
         Save the embedding parameters. Serializes word frequencies and principal components to JSON.
-        Does NOT serialize the fastText model.
+        Does NOT serialize the fasttext model.
 
         Returns:
             String with JSON containing fitted SIFembedder parameters.
