@@ -58,7 +58,7 @@ def count_word_frequencies(keywords):
     return dict(word_frequencies)
 
 
-def load_csv_column(path, column_name, delimiter=','):
+def load_csv_column(path, column_name, delimiter=',', errors='skip'):
     """
     Load the contents of a column in a csv file.
 
@@ -70,7 +70,10 @@ def load_csv_column(path, column_name, delimiter=','):
     Returns:
         A list of column fields as strings.
     """
+    assert errors in ['skip', 'raise']
+
     fields = []
+    n_skip = 0
     # go over all the csv rows
     with open(path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=delimiter)
@@ -86,9 +89,14 @@ def load_csv_column(path, column_name, delimiter=','):
                     fields.append(row[column_index])
                 except Exception as e:
                     print("\n!!! ERROR !!!\nRow[%d]: %s\n" % (line_count, row))
-                    raise e
+                    n_skip += 1
+                    if errors == 'raise':
+                        raise e
 
             line_count += 1
+
+    if n_skip > 0:
+        print("Rows skipped: %d/%d " % (n_skip, line_count))
     return fields
 
 
