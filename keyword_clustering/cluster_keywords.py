@@ -417,3 +417,40 @@ class Categorizer(object):
                 ]
 
         return results
+
+    def closest_keywords(self, keywords, n_keywords, lowercase=True):
+        """
+        For each keyword k return the list of all categories where k is
+        among 'n_keywords' closest keywords.
+        
+        Args:
+            keywords: A list of keywords (str).
+            n_keywords: The number of closest keywords per category. (default: 1000)
+
+        Returns:
+            A list of lists of category/distance pairs.
+        """
+        if lowercase:
+            # transform the keywords to lower case
+            keywords = [kw.lower() for kw in keywords]
+
+        # compute distances
+        dists = compute_all_distances(keywords, self.category_names, self.category_embeddings, self.embedder)
+        
+        # collect top n closest keywords for each category
+        results = [[] for i in range(len(keywords))]
+        for j in range(0, dists.shape[1]):
+            # top n keywords closest to category
+            top_ids = np.argsort(dists[:,j])[:n_keywords]
+            for i in top_ids:
+                results[i].append((self.category_names[j], dists[i, j]))
+        
+        # if ids are available, add them to the output
+        if self.category_ids is not None:
+            for row_i, row in enumerate(results):
+                results[row_i] = [
+                    (category_name, self.category_ids[category_name], distance)
+                    for category_name, distance in row
+                ]
+
+        return results
