@@ -7,6 +7,7 @@
 import json
 import re
 import csv
+
 from collections import Counter
 
 import fasttext
@@ -58,7 +59,7 @@ def count_word_frequencies(keywords):
     return dict(word_frequencies)
 
 
-def load_csv_column(path, column_name, delimiter=',', errors='skip'):
+def load_csv_column(path, column_name, delimiter=',', errors='raise'):
     """
     Load the contents of a column in a csv file.
 
@@ -99,7 +100,6 @@ def load_csv_column(path, column_name, delimiter=',', errors='skip'):
         print("Rows skipped: %d/%d " % (n_skip, line_count))
     return fields
 
-
 def sif_embedding(keywords, model, word_frequencies, n_principal_components=1, alpha=1e-3, principal_components=None,
     return_components=False):
     """
@@ -125,7 +125,7 @@ def sif_embedding(keywords, model, word_frequencies, n_principal_components=1, a
 
     # calculate weighted average of word embeddings
     embs = np.zeros((len(keywords), 300))
-    for i, keyword in enumerate(tqdm(keywords)):
+    for i, keyword in enumerate(tqdm(keywords, desc='Average embedding', leave=False)):
         words = tokenize(keyword)
 
         # What should be the weight of a word not present in the training corpus (in word_frequencies table)?
@@ -135,27 +135,23 @@ def sif_embedding(keywords, model, word_frequencies, n_principal_components=1, a
             if word not in word2weight:
                 word2weight[word] = alpha / (alpha + 1 / (n_all_words + 1))
 
-        w = np.array([word2weight[word] * model.get_word_vector(word) for word in words])
-        embs[i] = (w.sum(axis=0) / len(words))
+        ws = sum(word2weight[word] * model.get_word_vector(word) for word in words)
+        embs[i] = ws  / len(words)
+
+    if principal_components is None and n_principal_components > 0:
+        # calculate principal components
+        svd = TruncatedSVD(n_components=n_principal_components, n_iter=7, random_state=0)
+        svd.fit(embs)
+        principal_components = svd.components_
 
     # remove principal components
-    if principal_components is not None:
-        # use precalculated
-        if n_principal_components == 1:
-            embs = embs - embs.dot(principal_components.transpose()) * principal_components
-        else:
-            embs = embs - embs.dot(principal_components.transpose()).dot(principal_components)
-    else:
-        # calculate new
-        if n_principal_components > 0:
-            svd = TruncatedSVD(n_components=n_principal_components, n_iter=7, random_state=0)
-            svd.fit(embs)
-            principal_components = svd.components_
-
+    if n_principal_components > 0:
+        batch_size = 500
+        for i in tqdm(range(0, embs.shape[0], batch_size), desc='Remove principal component'):
             if n_principal_components == 1:
-                embs = embs - embs.dot(principal_components.transpose()) * principal_components
+                embs[i:i + batch_size] -= embs[i:i + batch_size].dot(principal_components.transpose()) * principal_components
             else:
-                embs = embs - embs.dot(principal_components.transpose()).dot(principal_components)
+                embs[i:i + batch_size] -= embs[i:i + batch_size].dot(principal_components.transpose()).dot(principal_components)
 
     if return_components:
         return embs, principal_components
@@ -267,6 +263,51 @@ class SIFEmbedder(object):
 
         self.fitted = True
 
+def _compute_distances(m1, m2, n_closest=-1, return_distances=False):
+    """
+    Compute cosine distances between rows from ``m1`` to those from ``m2`` while return only indices and distances of ``n_closest``
+    rows from m2.
+
+    Args:
+        m1: A numpy array of dimensions A x d
+        m2: A numpy array of dimensions B x d
+        n_closest: Number of closest rows of m2 to return (n_closest=-1 returns all rows)
+        
+    Returns:
+        A numpy array of distances of dimensions A x ``n_closest``.
+    """
+    inds = np.zeros((m1.shape[0], n_closest), dtype=int)
+    if return_distances:
+        dists = np.zeros((m1.shape[0], n_closest))
+
+    batch_size = 4000
+    for m1_start in tqdm(range(0, m1.shape[0], batch_size), desc='Calculating distances'):
+        # normalize a batch of rows from m1
+        m1_norm = m1[m1_start:m1_start + batch_size]
+        m1_norm = m1_norm / np.linalg.norm(m1_norm, ord=2, axis=-1, keepdims=True)
+
+        m1_size = min(batch_size, m1.shape[0] - m1_start)
+        curr = [[] for i in range(m1_size)] # set of closest rows
+        for m2_start in tqdm(range(0, m2.shape[0], batch_size), leave=False):
+            # normalize a batch of rows from m2
+            m2_norm = m2[m2_start:m2_start + batch_size]
+            m2_norm = m2_norm / np.linalg.norm(m2_norm, ord=2, axis=-1, keepdims=True)
+            # calculate and sort distances
+            curr_dists =  1. - np.matmul(m1_norm, m2_norm.T)
+            s_ids = m2_start + np.argsort(curr_dists, axis=-1)[:, :n_closest]
+            s_dists = np.sort(curr_dists, axis=-1)[:, :n_closest]
+            # merge to keep 'n_closest' rows from m2
+            for i in range(0, m1_size):
+                curr[i] = sorted(curr[i] + list(zip(s_ids[i], s_dists[i])), key=lambda x: x[1])[:n_closest] 
+            
+        # store the indices of n closest targets
+        inds[m1_start:m1_start + batch_size] = np.array([[x[0] for x in row] for row in curr])
+        if return_distances:
+            dists[m1_start:m1_start + batch_size] = np.array([[x[1] for x in row] for row in curr])
+    if return_distances:
+        return inds, dists
+    return inds
+
 
 def compute_all_distances(keywords, target_keywords, target_keyword_embeddings, embedder):
     """
@@ -305,7 +346,6 @@ def compute_all_distances(keywords, target_keywords, target_keyword_embeddings, 
 
     return dists
 
-
 def find_closest(keywords, target_keywords, target_keyword_embeddings, embedder, n_top_keywords=20):
     """
     Compute and return keywords from ``target_keywords`` closest to those from ``keywords``.
@@ -322,14 +362,14 @@ def find_closest(keywords, target_keywords, target_keyword_embeddings, embedder,
         A list of lists of closest keywords and their distances for keywords from ``keywords``.
         Results can be matched by index.
     """
+    # compute embeddings
+    ke = embedder.embed(keywords)
     # compute distances
-    dists = compute_all_distances(keywords, target_keywords, target_keyword_embeddings, embedder)
-
-    # collect top closest keywords and sort them
+    inds, dists = _compute_distances(ke, target_keyword_embeddings, n_closest=n_top_keywords, return_distances=True)
+    # collect top closest keywords
     top_kws = []
     for i in range(0, dists.shape[0]):
-        top_ids = np.argsort(dists[i,:])[:n_top_keywords]
-        top_kws.append([(target_keywords[j], dists[i,j]) for j in top_ids])
+        top_kws.append([(target_keywords[ind], dist) for ind, dist in zip(inds[i], dists[i])])
 
     return top_kws
 
@@ -405,6 +445,7 @@ class Categorizer(object):
         if lowercase:
             # transform the keywords to lower case
             keywords = [kw.lower() for kw in keywords]
+        
         results = find_closest(keywords, self.category_names, self.category_embeddings, self.embedder,
             n_top_keywords=n_categories)
 
@@ -433,18 +474,19 @@ class Categorizer(object):
         if lowercase:
             # transform the keywords to lower case
             keywords = [kw.lower() for kw in keywords]
-
+        
+        # compute embeddings
+        ke = self.embedder.embed(keywords)
         # compute distances
-        dists = compute_all_distances(keywords, self.category_names, self.category_embeddings, self.embedder)
+        inds, dists = _compute_distances(self.category_embeddings, ke, n_closest=n_keywords, return_distances=True)
         
         # collect top n closest keywords for each category
         results = [[] for i in range(len(keywords))]
         for j in range(0, dists.shape[1]):
             # top n keywords closest to category
-            top_ids = np.argsort(dists[:,j])[:n_keywords]
-            for i in top_ids:
-                results[i].append((self.category_names[j], dists[i, j]))
-        
+            for i, dist in zip(inds[j], dists[j]):
+                results[i].append((self.category_names[j], dist))
+                
         # if ids are available, add them to the output
         if self.category_ids is not None:
             for row_i, row in enumerate(results):
