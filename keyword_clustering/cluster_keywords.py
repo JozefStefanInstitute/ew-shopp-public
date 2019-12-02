@@ -485,7 +485,7 @@ class Categorizer(object):
         
         # collect top n closest keywords for each category
         results = [[] for i in range(len(keywords))]
-        for j in range(0, dists.shape[1]):
+        for j in range(0, dists.shape[0]):
             # top n keywords closest to category
             for i, dist in zip(inds[j], dists[j]):
                 results[i].append((self.category_names[j], dist))
@@ -497,5 +497,5 @@ class Categorizer(object):
                     (category_name, self.category_ids[category_name], distance)
                     for category_name, distance in row
                 ]
-
+        
         return results

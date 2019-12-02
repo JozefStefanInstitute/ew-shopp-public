@@ -56,8 +56,38 @@ python server.py <path_to_fasttext_bin> <path_to_embedder_json> <path_to_categor
 ```
 
 **Example:**
+
+Run the server using:
 ```
-python server.py data/cc.es.300.bin data/es-embedder.json data/es-categories.csv 
+python server.py data/cc.es.300.bin data/es-embedder.json data/es-categories.csv --port 8500
+```
+
+Query the server with:
+```
+curl -v -H "Content-Type: application/json" -X POST \
+     -d '{"keywords": ["atrium hotels", "nueva crevia inmobiliaria"]}' -i http://127.0.0.1:8500/categorize
+```
+
+Server returns the json file with the following format:
+```json
+[
+    {
+        "keyword": "atrium hotels",
+        "categories": [
+            {"category": "/Vestir", "distance": 0.9718578781244382, "id": "10021"}, 
+            {"category": "/Vestir/Ropa y accesorios", "distance": 1.067274959081289, "id": "10178"},
+            ...
+        ]
+    }, 
+    {
+        "keyword": "nueva crevia inmobiliaria",
+        "categories": [
+            {"category": "/Vestir", "distance": 0.7968072411181323, "id": "10021"}, 
+            {"category": "/Vestir/Ropa y accesorios", "distance": 0.9191133770348949, "id": "10178"},
+            ...
+        ]
+    }
+]
 ```
 
 # Optional:
