@@ -276,6 +276,7 @@ def _compute_distances(m1, m2, n_closest=-1, return_distances=False):
     Returns:
         A numpy array of distances of dimensions A x ``n_closest``.
     """
+    assert n_closest <= m2.shape[0]
     inds = np.zeros((m1.shape[0], n_closest), dtype=int)
     if return_distances:
         dists = np.zeros((m1.shape[0], n_closest))
@@ -475,6 +476,8 @@ class Categorizer(object):
             # transform the keywords to lower case
             keywords = [kw.lower() for kw in keywords]
         
+        # 'n_keywords' cannot be more then the actual number of keywords
+        n_keywords = min(len(keywords), n_keywords)
         # compute embeddings
         ke = self.embedder.embed(keywords)
         # compute distances
