@@ -37,12 +37,13 @@ python categoriser.py relevance_to_category data/cc.es.300.bin data/es-embedder.
 ```
 
 # 3. Find top-k categories for each keyword
-
 ```
 python categoriser.py categorise_keywords <fasttext_bin> <embedder_json> <categories_file> <keywords_file> <output_file>
 ```
 
 The number of closest categories can be specified via **--n_categories** parameter (3 by default).
+
+Category column can be set via ***--categories_column*** parameter - (__--categories_column 'Category_ES'__)
 
 **Example:**
 ```
@@ -65,7 +66,7 @@ python server.py data/cc.es.300.bin data/es-embedder.json data/es-categories.csv
 Query the server with:
 ```
 curl -v -H "Content-Type: application/json" -X POST \
-     -d '{"keywords": ["atrium hotels", "nueva crevia inmobiliaria"]}' -i http://127.0.0.1:8500/categorize
+     -d '{"keywords": ["atrium hotels", "nueva crevia inmobiliaria"]}' -i http://127.0.0.1:8500/categorise_keywords
 ```
 
 Server returns the json file with the following format:
@@ -74,21 +75,22 @@ Server returns the json file with the following format:
     {
         "keyword": "atrium hotels",
         "categories": [
-            {"category": "/Vestir", "distance": 0.9718578781244382, "id": "10021"}, 
-            {"category": "/Vestir/Ropa y accesorios", "distance": 1.067274959081289, "id": "10178"},
-            ...
+            {"category": "/Viajes y Turismo/alojamiento/Hoteles, moteles & Resorts/hoteles/Paquetes hotel", "distance": 0.75, "id": "13022"}, 
+            {"category": "/Viajes y Turismo/alojamiento/Hoteles, moteles & Resorts/Resorts/Paquetes Resort", "distance": 0.766, "id": "13021"},
+            {"category": "/Hogar & Jard\u00edn/Limpieza de viviendas", "distance": 0.77, "id": "10399"}
         ]
-    }, 
+    },
     {
         "keyword": "nueva crevia inmobiliaria",
         "categories": [
-            {"category": "/Vestir", "distance": 0.7968072411181323, "id": "10021"}, 
-            {"category": "/Vestir/Ropa y accesorios", "distance": 0.9191133770348949, "id": "10178"},
-            ...
-        ]
+            {"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Rehabilitaci\u00f3n f\u00edsica/Terapia f\u00edsica", "distance": 0.569, "id": "11792"},{"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Rehabilitaci\u00f3n f\u00edsica/Terapia ocupacional", "distance": 0.576, "id": "11794"},
+            {"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Reasignaci\u00f3n terapia sexual", "distance": 0.58, "id": "13452"}
+        ] 
     }
 ]
 ```
+
+**Note:** If the resulting categories are not in the correct language, you should check the csv file and use the **--categories_column** parameter to specify the row containing the correct category names (i.e. ***--categories_column 'Category_ES'***). 
 
 # Optional:
 Translate product categories from  **english** to  **spanish**:

@@ -4,14 +4,14 @@ import cluster_keywords as ck
 
 app = Flask(__name__)
 
-@app.route('/categorize', methods=['POST'])
+@app.route('/categorise_keywords', methods=['POST'])
 def categorize():
     req = request.get_json()
     
     keywords = req['keywords']
-    n_keywords = req['n_keywords'] if 'n_keywords' in req else 1000
+    n_categories = req['n_categories'] if 'n_categories' in req else 10
 
-    result = categorizer.closest_keywords(keywords, n_keywords)
+    result = categorizer.categorize(keywords, n_categories=n_categories)
 
     response = []
     for i, categories in enumerate(result):
@@ -30,6 +30,33 @@ def categorize():
                     mimetype='application/json')
     resp.headers["Content-Type"] = "application/json; charset=utf-8"
     return resp
+
+# @app.route('/categorize', methods=['POST'])
+# def categorize():
+#     req = request.get_json()
+    
+#     keywords = req['keywords']
+#     n_keywords = req['n_keywords'] if 'n_keywords' in req else 1000
+
+#     result = categorizer.closest_keywords(keywords, n_keywords)
+
+#     response = []
+#     for i, categories in enumerate(result):
+#         response.append({
+#             'keyword': keywords[i],
+#             'categories': [
+#                 {
+#                     'category': c[0],
+#                     'id': c[1],
+#                     'distance': c[2]
+#                 } for c in sorted(categories, key=lambda x: x[2])
+#             ] 
+#         })
+       
+#     resp = Response(json.dumps(response), status=200,
+#                     mimetype='application/json')
+#     resp.headers["Content-Type"] = "application/json; charset=utf-8"
+#     return resp
 
 if __name__ == "__main__":
     # parse command line arguments
