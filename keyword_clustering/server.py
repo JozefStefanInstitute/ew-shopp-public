@@ -9,7 +9,7 @@ def categorize():
     req = request.get_json()
     
     keywords = req['keywords']
-    n_categories = req['n_categories'] if 'n_categories' in req else 10
+    n_categories = req['n_categories'] if 'n_categories' in req else 3
 
     result = categorizer.categorize(keywords, n_categories=n_categories)
 
