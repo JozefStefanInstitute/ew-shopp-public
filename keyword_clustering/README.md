@@ -60,5 +60,8 @@ python server.py <path_to_fasttext_bin> <path_to_embedder_json> <path_to_categor
 python server.py data/cc.es.300.bin data/es-embedder.json data/es-categories.csv 
 ```
 
-
-
+# Optional:
+Translate product categories from  **english** to  **spanish**:
+```
+python translate_categories.py data/en-categories.csv en es data/es-categories.csv
+```
