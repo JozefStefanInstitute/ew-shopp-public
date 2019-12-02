@@ -83,7 +83,8 @@ Server returns the json file with the following format:
     {
         "keyword": "nueva crevia inmobiliaria",
         "categories": [
-            {"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Rehabilitaci\u00f3n f\u00edsica/Terapia f\u00edsica", "distance": 0.569, "id": "11792"},{"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Rehabilitaci\u00f3n f\u00edsica/Terapia ocupacional", "distance": 0.576, "id": "11794"},
+            {"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Rehabilitaci\u00f3n f\u00edsica/Terapia f\u00edsica", "distance": 0.569, "id": "11792"},
+            {"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Rehabilitaci\u00f3n f\u00edsica/Terapia ocupacional", "distance": 0.576, "id": "11794"},
             {"category": "/Salud/Servicios de atenci\u00f3n m\u00e9dica/Reasignaci\u00f3n terapia sexual", "distance": 0.58, "id": "13452"}
         ] 
     }
