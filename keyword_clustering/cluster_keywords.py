@@ -76,13 +76,14 @@ def load_csv_column(path, column_name, delimiter=',', errors='raise'):
     fields = []
     n_skip = 0
     # go over all the csv rows
-    with open(path) as csv_file:
+    with open(path, encoding="utf-8") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=delimiter)
         line_count = 0
         for row in csv_reader:
             if line_count == 0:
                 # first line - get the column index from the header
                 keyword_header = row
+                print(row)
                 column_index = keyword_header.index(column_name)
             else:
                 # get the correct field

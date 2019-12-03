@@ -1,10 +1,20 @@
 import argparse
 from flask import Flask, Response, json, request
 import cluster_keywords as ck
+from flask_caching import Cache
+
 
 app = Flask(__name__)
 
+cache = Cache(app, config={
+    'CACHE_TYPE': 'simple',
+    'CACHE_DEFAULT_TIMEOUT': 922337203685477580,
+    'CACHE_THRESHOLD': 922337203685477580
+})
+
+
 @app.route('/categorise_keywords', methods=['POST'])
+@cache.cached()
 def categorize():
     req = request.get_json()
     
@@ -102,4 +112,4 @@ if __name__ == "__main__":
     print("Categorizer built!")
 
     # run server
-    app.run(host='127.0.0.1', port=args.port)
+    app.run(host='0.0.0.0', port=args.port)
