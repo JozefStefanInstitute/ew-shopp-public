@@ -8,25 +8,27 @@ app = Flask(__name__)
 
 cache = Cache(app, config={
     'CACHE_TYPE': 'simple',
+    'DEBUG': True,
     'CACHE_DEFAULT_TIMEOUT': 922337203685477580,
     'CACHE_THRESHOLD': 922337203685477580
 })
 
 
-@app.route('/categorise_keywords', methods=['POST'])
+@app.route('/categorise_keywords/<keyword>/<int:candidates>', methods=['POST'])
 @cache.cached()
-def categorize():
-    req = request.get_json()
-    
-    keywords = req['keywords']
-    n_categories = req['n_categories'] if 'n_categories' in req else 3
+def categorize(keyword, candidates):
 
-    result = categorizer.categorize(keywords, n_categories=n_categories)
+    n_categories = candidates
+
+    if n_categories is None:
+        n_categories = 3
+
+    result = categorizer.categorize([keyword], n_categories=n_categories)
 
     response = []
     for i, categories in enumerate(result):
         response.append({
-            'keyword': keywords[i],
+            'keyword': keyword,
             'categories': [
                 {
                     'category': c[0],
