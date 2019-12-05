@@ -102,7 +102,7 @@ function exec(pipeline, mode, overBase = undefined, modelsRootDir = undefined) {
         console.log(`Pipeline: ${pipeline["id"]}`);
         console.log(`Dir: ${pipeline["dir"]}`);
         console.log(`Mode: ${mode}`);
-
+        utils.createDir(pipeline["dir"]);
         // Copy pipeline config file to working directory
         let fout = fs.openWrite(pipeline["dir"] + "pipeline-" + mode + ".json");
         fout.write(JSON.stringify(pipeline, null, 4));
@@ -234,7 +234,8 @@ function extraction(pipeline, base) {
         let transformer = loadModule(moduleInfo["module"]);
 
         let params = moduleInfo["params"];
-        params["output_store"] = moduleInfo["module"]; // !!!
+        params["output_store"] = moduleInfo["output_store"] ?
+            moduleInfo["output_store"] : moduleInfo["module"]; // !!!
         params["input"] = pipeline["pipeline"]["input"];
 
         let [features, featuresRecs] = transformer.exec(params, base);
