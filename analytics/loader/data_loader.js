@@ -1013,8 +1013,15 @@ class QminerDBHandle extends Handle {
         // Get all data from scheme to mapping
         // Loop through stores
         Object.keys(mapping).forEach(store => {
-            // Loop through fields
+            const fieldMappingProvided = Object.keys(mapping[store].fields).length;
+            if (!fieldMappingProvided) {
+                mapping[store].fields = Object.keys(useSchema[store].fields).reduce(
+                    (acc, key) => {acc[key] = key; return acc; },
+                     mapping[store].fields);
+            }
+
             Object.keys(mapping[store].fields).forEach(fromField => {
+                // If field mapping is empty than fromField and toField are the same
                 let toField = mapping[store].fields[fromField];
                 if (typeof toField === "string") {
                     mapping[store].fields[fromField] = useSchema[store].fields[toField];
