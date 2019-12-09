@@ -1,6 +1,7 @@
 "use strict";
 
 const qm = require("qminer");
+const utils = require("../../util/utils");
 const fs = qm.fs;
 
 function exec(params, base) {
@@ -31,6 +32,7 @@ function exec(params, base) {
         addHeader = info.size === 0;
         ff = fs.openAppend(params["output_file"]);
     } else {
+        utils.createDir(params["output_file"], false);
         ff = fs.openWrite(params["output_file"]);
     }
 

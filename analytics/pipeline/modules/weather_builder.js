@@ -170,6 +170,11 @@ function exec(params) {
             }
         });
 
+        if (params["dump_features"] != null) {
+            params["forecastOffset"] = forecastOffset;
+            dumpWeatherFeatures(featureStore, params["dump_features"], params);
+        }
+
         console.log("%d records in database", featureStore.allRecords.length);
 
         // Populate features description store
@@ -207,6 +212,49 @@ function exec(params) {
         });
     }
     featuresBase.close();
+}
+
+function dumpWeatherFeatures(store, filename, params) {
+    let featureNames, records = [], columns = [];
+    if (params["dump_features_per_region"]) {
+        // Dump weather features one per timestamp,forecast offset and region ID
+
+        // Unique features per region - do not use 'Timestamp' column
+        let uniqueFeatureNames = new Set();
+        store.fields.slice(1).forEach(field => { uniqueFeatureNames.add(field.name.split("__")[0]); });
+        uniqueFeatureNames = Array.from(uniqueFeatureNames);
+
+        // Create new columns of TSV
+        columns = ["Timestamp", "RegionID", "ForecastOffset"].concat(uniqueFeatureNames);
+        // Transform one record to many records for each region
+        store.allRecords.each(rec => {
+            const recordJson = rec.toJSON();
+            params.regions.forEach(region => {
+                const record = {
+                    "Timestamp": recordJson["Timestamp"],
+                    "ForecastOffset": params["forecastOffset"],
+                    "RegionID": region
+                };
+                uniqueFeatureNames.forEach(featureName => {
+                    record[featureName] = rec[featureName + "__r" + region];
+                });
+                records.push(record);
+            });
+        });
+    } else {
+        // Dump weather features one per timestamp and forecast offset
+        featureNames = store.fields.slice(1).map(field => field.name);
+        records = store.map(rec =>
+            Object.assign({ "ForecastOffset": params["forecastOffset"] }, rec.toJSON())
+        );
+        columns = ["Timestamp", "ForecastOffset"].concat(featureNames);
+    }
+
+    // On first offset create new file, otherwise append to existing file
+    let append = utils.existsFile(params["dump_features"]) && params["forecastOffset"] !== -1;
+    utils.saveToTsv(params["dump_features"], records, true, false, false,
+        columns, append);
+
 }
 
 module.exports = { exec };

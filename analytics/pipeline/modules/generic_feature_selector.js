@@ -19,26 +19,32 @@ function exec(params, base) {
     }
 
     // Find a subset of features matching specified criterion
-    let selectedFeaturesName = params["features"] ? params["features"] : store.fields;
-
+    let selectedFeaturesName = params["features"] ? params["features"] : store.fields.map(field => field.name);
+    let notFeaturesName = params["not_features"] ? params["not_features"] : [];
     // Set feature store and feature vector
-    let storeFields = [],
-        features = [];
-    for (let featureName of selectedFeaturesName) {
-        for (let field of store.fields) {
-            if (featureName === field.name) {
-                storeFields.push({ name: featureName, type: field.type, null: field.nullable });
-                features.push({
-                    type: store.isNumeric(featureName) ? "numeric" : "categorical",
-                    source: params["output_store"],
-                    normalize: params["normalize"] && store.isNumeric(featureName) ? params["normalize"] : "none",
-                    field: featureName
-                });
+    let storeFields = [], features = [], usedFeatures = [];
+    for (let field of store.fields) {
+        let featureName = field.name;
+        if (notFeaturesName.some(notFeature => featureName.match(notFeature)))
+            continue;
+        // If it match any given feature name than use it
+        if (selectedFeaturesName.some(selectedFeature => featureName.match(selectedFeature))) {
+            usedFeatures.push(featureName);
+            if (field.type === "datetime") {
+                console.warn("Field type datetime not supported for features! Skipping '" + featureName + "'!");
+                continue;
             }
+            storeFields.push({ name: featureName, type: field.type, null: field.nullable });
+            features.push({
+                type: store.isNumeric(field.name) ? "numeric" : "categorical",
+                source: params["output_store"],
+                normalize: params["normalize"] && store.isNumeric(featureName) ? params["normalize"] : "none",
+                field: featureName
+            });
         }
     }
 
-    console.log(selectedFeaturesName);
+    console.log(usedFeatures);
 
     // Create feature store
     let featureStore = base.createStore({
@@ -64,9 +70,9 @@ function exec(params, base) {
         let [key] = utils.getKey(params["input"]["primary_key"], inputRec, usedKeys, params["keep_only_date"]);
 
         let featRec = mappingFeatRec.get(key);
-        assert(featRec != null, inputRec.Timestamp.valueOf());
+        assert(featRec != null, inputRec.Timestamp.valueOf() + " " + inputRec.Timestamp);
         let rec = {};
-        selectedFeaturesName.forEach(featureName => {
+        usedFeatures.forEach(featureName => {
             rec[featureName] = featRec[featureName];
         });
 

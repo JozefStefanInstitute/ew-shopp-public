@@ -304,15 +304,14 @@ function extractPaths(paths, depth = 1, extract_dir = false) {
     return [...filePaths];
 }
 
-function saveToTsv(outPath, data, createHeader = false, addJoins = false, internalId = false, useColumns = null) {
-    const fout = new fs.FOut(outPath);
-
-    console.log("Writing to " + outPath);
+function saveToTsv(outPath, data, createHeader = false, addJoins = false, internalId = false, useColumns = null, append = false) {
+    const fout = append ? fs.openAppend(outPath) : new fs.FOut(outPath);
+    console.log("\nWriting to " + outPath);
     let fields = [];
     if (data instanceof qm.RecSet) {
         if (internalId) fields.push("$id");
         data.store.fields.forEach(x => fields.push(x.name));
-        fields = fields.filter((field) => {return useColumns.includes(field)});
+        fields = fields.filter((field) => {return useColumns == null || useColumns.includes(field)});
         if (addJoins) data.store.joins.forEach(x => {if (x.type === "field") fields.push(x.recordField)});
     } else {
         fields = useColumns;
@@ -332,7 +331,7 @@ function saveToTsv(outPath, data, createHeader = false, addJoins = false, intern
         fout.writeLine(line);
     };
 
-    if (createHeader) {
+    if (createHeader && !append) {
         let headerLine = "";
         for (let i = 0; i < fields.length; i++) {
             headerLine += fields[i] + "\t";
