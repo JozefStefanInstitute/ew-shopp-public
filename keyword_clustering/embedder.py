@@ -33,7 +33,7 @@ def main_build(args):
 
 
     # run embedder
-    es_embedder.fit(keywords)
+    es_embedder.fit(keywords, sample_size=args.sample)
 
 
     # store parameters
@@ -61,6 +61,7 @@ if __name__ == '__main__':
     argparser_build.add_argument('path_embedder_parameters', type=str, help='Path where to store the embedder parameters into a json file.')
     argparser_build.add_argument('--keywords_delimiter', '-kd', type=str, default=',', help='Delimiter used in the keywords csv file. (default: \',\')')
     argparser_build.add_argument('--keywords_column', '-kc', type=str, default='Keyword', help='Name of column containing keywords in the keywords csv file. (default: \'Keyword\')')
+    argparser_build.add_argument('--sample', '-s', type=int, default=1000000, help='Size of random sample of keywords. (default: 1000000)')
     #argparser_build.add_argument('--path_embeddings', type=str, help='Path to embeddings output file. If not set, the embeddings are not stored to disk.')
     argparser_build.set_defaults(command='build')
 
