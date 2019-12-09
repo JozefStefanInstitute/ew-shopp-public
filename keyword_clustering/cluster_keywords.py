@@ -76,7 +76,7 @@ def load_csv_column(path, column_name, delimiter=',', errors='raise'):
     fields = []
     n_skip = 0
     # go over all the csv rows
-    with open(path) as csv_file:
+    with open(path, encoding="utf8") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=delimiter)
         line_count = 0
         for row in csv_reader:
@@ -146,8 +146,8 @@ def sif_embedding(keywords, model, word_frequencies, n_principal_components=1, a
 
     # remove principal components
     if n_principal_components > 0:
-        batch_size = 500
-        for i in tqdm(range(0, embs.shape[0], batch_size), desc='Remove principal component'):
+        batch_size = 1000
+        for i in tqdm(range(0, embs.shape[0], batch_size), desc='Remove principal component', leave=False):
             if n_principal_components == 1:
                 embs[i:i + batch_size] -= embs[i:i + batch_size].dot(principal_components.transpose()) * principal_components
             else:
@@ -263,7 +263,8 @@ class SIFEmbedder(object):
 
         self.fitted = True
 
-def _compute_distances(m1, m2, n_closest=-1, return_distances=False):
+
+def _compute_distances_raw(l1, l2, embedder, n_closest=-1, return_distances=False):
     """
     Compute cosine distances between rows from ``m1`` to those from ``m2`` while return only indices and distances of ``n_closest``
     rows from m2.
@@ -276,22 +277,22 @@ def _compute_distances(m1, m2, n_closest=-1, return_distances=False):
     Returns:
         A numpy array of distances of dimensions A x ``n_closest``.
     """
-    assert n_closest <= m2.shape[0]
-    inds = np.zeros((m1.shape[0], n_closest), dtype=int)
+    assert n_closest <= len(l2)
+    inds = np.zeros((len(l1), n_closest), dtype=int)
     if return_distances:
-        dists = np.zeros((m1.shape[0], n_closest))
+        dists = np.zeros((len(l1), n_closest))
 
     batch_size = 4000
-    for m1_start in tqdm(range(0, m1.shape[0], batch_size), desc='Calculating distances'):
+    for m1_start in tqdm(range(0, len(l1), batch_size), desc='Calculating distances'):
         # normalize a batch of rows from m1
-        m1_norm = m1[m1_start:m1_start + batch_size]
+        m1_norm = embedder.embed(l1[m1_start:m1_start + batch_size])
         m1_norm = m1_norm / np.linalg.norm(m1_norm, ord=2, axis=-1, keepdims=True)
 
-        m1_size = min(batch_size, m1.shape[0] - m1_start)
+        m1_size = min(batch_size, len(l1) - m1_start)
         curr = [[] for i in range(m1_size)] # set of closest rows
-        for m2_start in tqdm(range(0, m2.shape[0], batch_size), leave=False):
+        for m2_start in tqdm(range(0, len(l2), batch_size), leave=False):
             # normalize a batch of rows from m2
-            m2_norm = m2[m2_start:m2_start + batch_size]
+            m2_norm = embedder.embed(l2[m2_start:m2_start + batch_size])
             m2_norm = m2_norm / np.linalg.norm(m2_norm, ord=2, axis=-1, keepdims=True)
             # calculate and sort distances
             curr_dists =  1. - np.matmul(m1_norm, m2_norm.T)
@@ -308,71 +309,6 @@ def _compute_distances(m1, m2, n_closest=-1, return_distances=False):
     if return_distances:
         return inds, dists
     return inds
-
-
-def compute_all_distances(keywords, target_keywords, target_keyword_embeddings, embedder):
-    """
-    Compute and return all distances between keywords from ``keywords`` to those from ``target_keywords``.
-
-    Args:
-        keywords: A list of keywords
-        target_keywords: The list of target keywords to compute the distances to.
-        target_keyword_embeddings: The embeddings of keywords from target_keywords (numpy array).
-            Expected to be in the same order than target_keywords.
-        embedder: The SIFEmbedder object used for computing the embeddings.
-
-    Returns:
-        A numpy array of distances of dimensions |keywords| x |target_keywords|.
-    """
-    # compute embeddings
-    ke = embedder.embed(keywords)
-    # normalize
-    ke = ke / np.sqrt((ke * ke).sum(axis=-1, keepdims=True))
-    keyword_embeddings = ke
-
-    # process target keywords in batches
-    step_size = 10000
-    for step_start in range(0, target_keyword_embeddings.shape[0], step_size):
-        # take a batch of target keyword embeddings
-        embedding_batch = target_keyword_embeddings[step_start:step_start + step_size]
-        # normalize them
-        embedding_batch = embedding_batch / np.sqrt((embedding_batch * embedding_batch).sum(axis=-1, keepdims=True))
-        # compute cosine similarity
-        sims = np.matmul(keyword_embeddings, embedding_batch.T) # query vector cosine similarity
-        # invert the similarities into distances and collect them
-        if step_start == 0:
-            dists = 1. - sims
-        else:
-            dists = np.concatenate((dists, 1. - sims), axis=1)
-
-    return dists
-
-def find_closest(keywords, target_keywords, target_keyword_embeddings, embedder, n_top_keywords=20):
-    """
-    Compute and return keywords from ``target_keywords`` closest to those from ``keywords``.
-
-    Args:
-        keywords: A list of keywords
-        target_keywords: The list of target keywords to search for the closest from.
-        target_keyword_embeddings: The embeddings of keywords from target_keywords (numpy array).
-            Expected to be in the same order than target_keywords.
-        embedder: The SIFEmbedder object used for computing the embeddings.
-        n_top_keywords: The number of closest target keywords to return per keyword.
-
-    Returns:
-        A list of lists of closest keywords and their distances for keywords from ``keywords``.
-        Results can be matched by index.
-    """
-    # compute embeddings
-    ke = embedder.embed(keywords)
-    # compute distances
-    inds, dists = _compute_distances(ke, target_keyword_embeddings, n_closest=n_top_keywords, return_distances=True)
-    # collect top closest keywords
-    top_kws = []
-    for i in range(0, dists.shape[0]):
-        top_kws.append([(target_keywords[ind], dist) for ind, dist in zip(inds[i], dists[i])])
-
-    return top_kws
 
 
 class Categorizer(object):
@@ -394,7 +330,7 @@ class Categorizer(object):
         self.category_ids = None            # A mapping of category ids (dict: str -> str)
         self.category_embeddings = None     # A numpy array of category embeddings - i-th row corresponds
                                             # to the i-th category name
-
+        self.clean_categories = None
 
     def fit(self, categories, category_ids=None):
         """
@@ -411,25 +347,11 @@ class Categorizer(object):
         # first clean categories
         clean_categories = [category_name.replace("/", " ").replace("&", " ") for category_name in self.category_names]
         clean_categories = [re.sub(" +", " ", category_name.strip().lower()) for category_name in clean_categories]
+        clean_categories = [cat.lower() for cat in clean_categories]
 
-        self.category_embeddings = self.embedder.embed([cat.lower() for cat in clean_categories])
+        self.clean_categories = clean_categories
+        self.category_embeddings = self.embedder.embed(clean_categories)
         self.fitted = True
-
-
-    def get_all_distances(self, keywords, lowercase=True):
-        """
-        Return distances to all categories for given keywords.
-
-        Args:
-            keywords: A list of target keywords (str) to return distances for.
-
-        Returns:
-            A numpy array of distances of dimensions |keywords| x |categories|.
-        """
-        if lowercase :
-            # transform the keywords to lower case
-            keywords = [kw.lower() for kw in keywords]
-        return compute_all_distances(keywords, self.category_names, self.category_embeddings, self.embedder)
 
 
     def categorize(self, keywords, n_categories = 3, lowercase=True):
@@ -447,9 +369,14 @@ class Categorizer(object):
             # transform the keywords to lower case
             keywords = [kw.lower() for kw in keywords]
         
-        results = find_closest(keywords, self.category_names, self.category_embeddings, self.embedder,
-            n_top_keywords=n_categories)
+        # calculate raw
+        inds, dists = _compute_distances_raw(keywords, self.clean_categories, embedder=self.embedder, n_closest=n_categories, return_distances=True)
 
+        # collect top closest keywords
+        results = []
+        for i in range(0, dists.shape[0]):
+            results.append([(self.category_names[ind], dist) for ind, dist in zip(inds[i], dists[i])])
+        
         # if ids are available, add them to the output
         if self.category_ids is not None:
             for row_i, row in enumerate(results):
@@ -478,11 +405,9 @@ class Categorizer(object):
         
         # 'n_keywords' cannot be more then the actual number of keywords
         n_keywords = min(len(keywords), n_keywords)
-        # compute embeddings
-        ke = self.embedder.embed(keywords)
-        # compute distances
-        inds, dists = _compute_distances(self.category_embeddings, ke, n_closest=n_keywords, return_distances=True)
-        
+        # calculate raw
+        inds, dists = _compute_distances_raw(self.clean_categories, keywords, embedder=self.embedder, n_closest=n_keywords, return_distances=True)
+
         # collect top n closest keywords for each category
         results = [[] for i in range(len(keywords))]
         for j in range(0, dists.shape[0]):
