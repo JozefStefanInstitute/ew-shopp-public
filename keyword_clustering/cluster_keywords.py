@@ -7,6 +7,7 @@
 import json
 import re
 import csv
+import random
 
 from collections import Counter
 
@@ -178,7 +179,7 @@ class SIFEmbedder(object):
         self.principal_components = None    # principal components of the embeddings of a given set of keywords
 
 
-    def fit_embed(self, keywords):
+    def fit(self, keywords, sample_size=1000000):
         """
         Fit the embedder to a set of keywords, computing the word frequencies and principal components, and embed them.
 
@@ -190,6 +191,11 @@ class SIFEmbedder(object):
         """
         # first count the word frequencies in the given keywords
         self.word_frequencies = count_word_frequencies(keywords)
+        # it is enough to fit on a random sample of keywords
+        if len(keywords) > sample_size:
+            print("Random sampling 1000000 keywords")
+            keywords = random.sample(keywords, sample_size)
+
         # then compute the SIF embeddings (computing the principal components along the way)
         embeddings, self.principal_components = sif_embedding(
             keywords,
@@ -201,8 +207,6 @@ class SIFEmbedder(object):
             return_components = True)
 
         self.fitted = True
-
-        return embeddings
 
 
     def embed(self, keywords):
@@ -281,19 +285,35 @@ def _compute_distances_raw(l1, l2, embedder, n_closest=-1, return_distances=Fals
     inds = np.zeros((len(l1), n_closest), dtype=int)
     if return_distances:
         dists = np.zeros((len(l1), n_closest))
-
+    
     batch_size = 4000
+    # if one of the lists is short enough, precompute its embeddings
+    # and normalize them
+    m1_pre, m2_pre = None, None
+    if len(l1) < batch_size:
+        m1_pre = embedder.embed(l1)
+        m1_pre = m1_pre / np.linalg.norm(m1_pre, ord=2, axis=-1, keepdims=True)
+    if len(l2) < batch_size:
+        m2_pre = embedder.embed(l2)
+        m2_pre = m2_pre / np.linalg.norm(m2_pre, ord=2, axis=-1, keepdims=True)
+    
     for m1_start in tqdm(range(0, len(l1), batch_size), desc='Calculating distances'):
         # normalize a batch of rows from m1
-        m1_norm = embedder.embed(l1[m1_start:m1_start + batch_size])
-        m1_norm = m1_norm / np.linalg.norm(m1_norm, ord=2, axis=-1, keepdims=True)
+        if m1_pre is not None:
+            m1_norm = m1_pre
+        else:
+            m1_norm = embedder.embed(l1[m1_start:m1_start + batch_size])
+            m1_norm = m1_norm / np.linalg.norm(m1_norm, ord=2, axis=-1, keepdims=True)
 
         m1_size = min(batch_size, len(l1) - m1_start)
         curr = [[] for i in range(m1_size)] # set of closest rows
         for m2_start in tqdm(range(0, len(l2), batch_size), leave=False):
             # normalize a batch of rows from m2
-            m2_norm = embedder.embed(l2[m2_start:m2_start + batch_size])
-            m2_norm = m2_norm / np.linalg.norm(m2_norm, ord=2, axis=-1, keepdims=True)
+            if m2_pre is not None:
+                m2_norm = m2_pre            
+            else:
+                m2_norm = embedder.embed(l2[m2_start:m2_start + batch_size])
+                m2_norm = m2_norm / np.linalg.norm(m2_norm, ord=2, axis=-1, keepdims=True)
             # calculate and sort distances
             curr_dists =  1. - np.matmul(m1_norm, m2_norm.T)
             s_ids = m2_start + np.argsort(curr_dists, axis=-1)[:, :n_closest]
