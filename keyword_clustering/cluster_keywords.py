@@ -102,7 +102,7 @@ def load_csv_column(path, column_name, delimiter=',', errors='raise'):
     return fields
 
 def sif_embedding(keywords, model, word_frequencies, n_principal_components=1, alpha=1e-3, principal_components=None,
-    return_components=False):
+    return_components=False, n_all_words=None, word2weight=None):
     """
     Compute a sentence/phrase embedding using the SIF approach.
     Details in: https://openreview.net/pdf?id=SyK00v5xx
@@ -121,8 +121,10 @@ def sif_embedding(keywords, model, word_frequencies, n_principal_components=1, a
         principal components computed during the embedding process using SVD are also returned.
     """
     # calculate word weights
-    n_all_words = float(sum(freq for _, freq in word_frequencies.items()))
-    word2weight = {word: alpha / (alpha + freq / n_all_words) for word, freq in word_frequencies.items()}
+    if n_all_words is None:
+        n_all_words = float(sum(freq for _, freq in word_frequencies.items()))
+    if word2weight is None:
+        word2weight = {word: alpha / (alpha + freq / n_all_words) for word, freq in word_frequencies.items()}
 
     # calculate weighted average of word embeddings
     embs = np.zeros((len(keywords), 300))
@@ -178,7 +180,9 @@ class SIFEmbedder(object):
         self.word_frequencies = None        # frequencies of individual words in a given set of keywords
         self.principal_components = None    # principal components of the embeddings of a given set of keywords
 
-
+        self.n_all_words = None             # sum of all word frequencies
+        self.word2weight = None             # word to weight mapping
+        
     def fit(self, keywords, sample_size=1000000):
         """
         Fit the embedder to a set of keywords, computing the word frequencies and principal components, and embed them.
@@ -191,6 +195,9 @@ class SIFEmbedder(object):
         """
         # first count the word frequencies in the given keywords
         self.word_frequencies = count_word_frequencies(keywords)
+        self.n_all_words = float(sum(freq for _, freq in self.word_frequencies.items()))
+        self.word2weight = {word: self.alpha / (self.alpha + freq / self.n_all_words) for word, freq in self.word_frequencies.items()}
+
         # it is enough to fit on a random sample of keywords
         if len(keywords) > sample_size:
             print("Random sampling 1000000 keywords")
@@ -204,7 +211,9 @@ class SIFEmbedder(object):
             n_principal_components = self.n_principal_components,
             alpha = self.alpha,
             principal_components = None,
-            return_components = True)
+            return_components = True,
+            n_all_words=self.n_all_words,
+            word2weight=self.word2weight)
 
         self.fitted = True
 
@@ -229,7 +238,9 @@ class SIFEmbedder(object):
             n_principal_components = self.n_principal_components,
             alpha = self.alpha,
             principal_components = self.principal_components,
-            return_components = False)
+            return_components = False,
+            n_all_words=self.n_all_words,
+            word2weight=self.word2weight)
 
         return embeddings
 
@@ -263,6 +274,9 @@ class SIFEmbedder(object):
         parameters = json.loads(json_string)
 
         self.word_frequencies = parameters["word_frequencies"]
+        self.n_all_words = float(sum(freq for _, freq in self.word_frequencies.items()))
+        self.word2weight = {word: self.alpha / (self.alpha + freq / self.n_all_words) for word, freq in self.word_frequencies.items()}
+
         self.principal_components = np.array(parameters["principal_components"])
 
         self.fitted = True
