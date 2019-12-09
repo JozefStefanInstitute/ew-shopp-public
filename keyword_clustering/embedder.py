@@ -33,7 +33,7 @@ def main_build(args):
 
 
     # run embedder
-    embeddings = es_embedder.fit_embed(keywords)
+    es_embedder.fit(keywords)
 
 
     # store parameters
@@ -44,10 +44,10 @@ def main_build(args):
 
 
     # if specified, store embeddings
-    if args.path_embeddings is not None:
-        embeddings_path = args.path_embeddings
-        print(f"Dumping embeddings to: {embeddings_path}")
-        np.save(open(embeddings_path, 'wb'), embeddings)
+    #if args.path_embeddings is not None:
+    #    embeddings_path = args.path_embeddings
+    #    print(f"Dumping embeddings to: {embeddings_path}")
+    #    np.save(open(embeddings_path, 'wb'), embeddings)
 
 
 if __name__ == '__main__':
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     argparser_build.add_argument('path_embedder_parameters', type=str, help='Path where to store the embedder parameters into a json file.')
     argparser_build.add_argument('--keywords_delimiter', '-kd', type=str, default=',', help='Delimiter used in the keywords csv file. (default: \',\')')
     argparser_build.add_argument('--keywords_column', '-kc', type=str, default='Keyword', help='Name of column containing keywords in the keywords csv file. (default: \'Keyword\')')
-    argparser_build.add_argument('--path_embeddings', type=str, help='Path to embeddings output file. If not set, the embeddings are not stored to disk.')
+    #argparser_build.add_argument('--path_embeddings', type=str, help='Path to embeddings output file. If not set, the embeddings are not stored to disk.')
     argparser_build.set_defaults(command='build')
 
     # parse the args and call whatever function was selected
