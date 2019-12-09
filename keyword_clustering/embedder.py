@@ -11,6 +11,7 @@ import cluster_keywords as ck
 
 def main_build(args):
     # load language model
+    print(args.path_model)
     ft_model_filename = args.path_model
     print(f"Loading language model from: {ft_model_filename}")
     model = ck.load_FT_model(ft_model_filename)
