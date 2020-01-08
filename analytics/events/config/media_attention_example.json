@@ -1,0 +1,33 @@
+{
+    "name": "MediaAttentionExample",
+    "version": "0.1",
+    "description": "Extracting media attention features for 2017 for 2 concepts within Germany",
+    "transformation": [
+        {
+            "module": "../events/events_features",
+            "params": {
+                "download": true,
+                "input_db": "../data/usecase/common/dbs/eventsDb",
+                "output_db": "../data/usecase/common/features/eventsFeaturesDb",
+                "output_conf_db": "./analytics/events/configEventsFeaturesDb.json",
+                "clean_db": true,
+                "queries": [
+                    {
+                        "keyword": "Association football",
+                        "locations": ["Germany"],
+                        "start_date": "2017-01-01",
+                        "end_date": "2017-12-30",
+                        "event_feature_id": "FootballGermany"
+                    },
+                    {
+                        "keyword": "Music",
+                        "locations": ["Germany"],
+                        "start_date": "2017-01-01",
+                        "end_date": "2017-12-30",
+                        "event_feature_id": "MusicGermany"
+                    }
+                ]
+            }
+        }
+    ]
+}
