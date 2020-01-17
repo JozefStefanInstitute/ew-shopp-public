@@ -24,11 +24,14 @@ Example of execution:
 ```console
 node analytics/pipeline/pipeline_runner.js -m {transform,fit,predict} -d PATH_TO_CONFIG
 ```
+
 Description of arguments:
-| Argument                | Type                |  Description                                                 |
-| ------------------- |:------------------- |:-------- |:----------------------------------------------------------  |
-| -d            | String             | Path to the JSON configuration file.        |
-| -m  | String                | Pipeline execution mode (fit, predict or transform).               |
+
+| Argument            | Type                |  Description                                                 |
+| ------------------- |:------------------- |:---------------------------------------------------- |
+| -d                  | String              | Path to the JSON configuration file.                 |
+| -m                  | String              | Pipeline execution mode (fit, predict or transform). |
+
 ## API 
 
 ### Feature transformation
@@ -50,7 +53,7 @@ Currently supports [weather feature transformation](../weather/README.md) and [m
             "params": {
                 "input_db": "<path_to_input_database>",
                 "output_db": "<path_to_output_database>",
-                ...
+                "...": "..."
             }
         }
     ]
@@ -79,14 +82,14 @@ A configuration file is specified in a JSON format and structured as follows:
             "primary_key": ["Timestamp"]
         },
         "extraction": [
-            ...
+            {},{}, "..."
         ],
         "model": {
-            ...
+            
         }
     },
     "input_extraction": {
-        ...
+        
     }
 }
 ```

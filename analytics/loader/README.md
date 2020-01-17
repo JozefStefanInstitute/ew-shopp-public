@@ -22,16 +22,17 @@ Finally, the connections are closed.
 The configuration must be structured as follows:
 ```json
 {
-    "source": { ... },
-    "destination": { ... },
+    "source": {  },
+    "destination": {  },
     "queries": [
-        { ... },
-        { ... },
-        ...
+        {  },
+        {  },
+        "..."
     ],
-    "misc": { ... }
+    "misc": {  }
 }
 ```
+Note that `"..."` is not actual value; it indicates the possibility of many objects.
 
 These top-level fields are described in the following table. 
 
