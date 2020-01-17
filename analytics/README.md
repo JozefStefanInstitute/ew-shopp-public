@@ -1,12 +1,14 @@
 # Analytics runner
  
-Analytics runner facilitates loading and storing data from various data collections using [Loader module][Loader] and, 
-with the use of [Pipeline module][Pipeline], it enables feature extraction, model building and making predictions.
+Analytics runner facilitates loading and storing data from various data collections using [Loader module][loader] and, 
+with the use of [Pipeline module][pipeline], it enables feature extraction, model building and making predictions.
 Currently, the script is focused on moving data between a shared MariaDB database and a local QMiner database (QMinerDB). 
 It extracts features from given data set, enriches data with weather features, creates models, 
 uploads model configurations to the shared database, fits all the models, makes predictions and uploads predictions back to the shared database.
 
-To put it in other words - it combines [Loader][Loader] and [Pipeline][Pipeline] modules with logging and error handling mechanisms.
+To put it in other words - it combines [Loader][loader] and [Pipeline][pipeline] modules with logging and error handling mechanisms.
+
+**⚠️ Note**: Because of the diversity of different use cases, it is advised to use [Loader][loader] and [Pipeline][pipeline] separately and not with analytics runner wrapper.
 
 ## Features
 The script executes sub-tasks in the following order:
@@ -30,19 +32,19 @@ See [Configuration section](#configuration).
 **Transformation configuration file**
 
 A JSON configuration file that specifies feature extraction. It is used in the pipeline module.
-See [pipeline module documentation][Pipeline].
+See [pipeline module documentation][pipeline].
 
 **Model/pipeline configuration file**
 
 A JSON configuration file that specifies input extraction, model building and making model predictions in
 a single pipeline configuration file. It is used in the pipeline module.
-See [pipeline module documentation][Pipeline].
+See [pipeline module documentation][pipeline].
 
 **Loader configuration file**
 
 A JSON configurations file that specifies how to move data between different data collections conveniently. 
 Currently supports moving data between TSV files, MariaDB, ArangoDB and QMinerDB. The configuration file is used in the loader module.
-See [loader module documentation][Loader].
+See [loader module documentation][loader].
     
 ## Configuration
 Example of the runner configuration file:
@@ -66,7 +68,7 @@ the default runner configuration file [_analytics/config/analytics_runner_defaul
 
 #### Parameters
 
-| Name                | Type                | Required | Description                                                 |
+| Parameter                | Type                | Required | Description                                                 |
 | ------------------- |:------------------- |:-------- |:----------------------------------------------------------  |
 | use_case            | String              | No      | Name of the use case.                                       |
 | models_configs_dir  | String              | Yes      | Directory with the model configuration files.               |
@@ -89,7 +91,7 @@ Afterwards, to make predictions and to fit on recent data, the transformation co
 ## Execution
 
 ```console
-$ node analytics/runner.js [<model_conf_paths>] [<options>]
+node analytics/runner.js [<model_conf_paths>] [<options>]
 ```
 
 ### Model configuration paths
@@ -134,26 +136,26 @@ installed and properly configured [weather-data API](https://github.com/JozefSte
 --upload-weather[=init]
 ```
 
-Upload raw weather data from TSV files to QMinerDB and MariaDB. By default, execution uses configuration files [_weather_store.json_][WeatherStore] and [_weather_qminer.json_][WeatherQMiner].
-If `init` is specified, the configuration files [_weather_store_init.json_][WeatherStore] is used and 
+Upload raw weather data from TSV files to QMinerDB and MariaDB. By default, execution uses configuration files [_weather_store.json_][weather_store] and [_weather_qminer.json_][weather_qminer].
+If `init` is specified, the configuration files [_weather_store_init.json_][weather_store] is used and 
 `config.paths.weatherInitTsv` in the [_config.js_](config/config.js) is used as source TSV file to initialize raw weather QMinerDB.
 
-Prerequisite: [_weather_store.json_][WeatherStore], [_weather_qminer.json_][WeatherQMiner] 
-  [_weather_store_init.json_][WeatherStore] and `config.paths.weatherInitTsv` TSV file.
+Prerequisite: [_weather_store.json_][weather_store], [_weather_qminer.json_][weather_qminer] 
+  [_weather_store_init.json_][weather_store] and `config.paths.weatherInitTsv` TSV file.
 
 ```console
 --update-data[=init]
 ```
 
 Download data, namely products and product states, from shared MariaDB for the specific date. Loader module uses loader's configuration file
-[_prod_load.json_][ProdLoad] with modified source query, that has `--date` value.
+[_prod_load.json_][product_load] with modified source query, that has `--date` value.
 
-If `init` is specified, a new database is created and the existing one is overwritten. The loader module loads data using configurations in [_prod_load_init.json_][ProdLoadInit].
+If `init` is specified, a new database is created and the existing one is overwritten. The loader module loads data using configurations in [_prod_load_init.json_][product_load_init].
 
 Note: If `init` is specified, option `--date` is ignored.
 
 Prerequisite:
-[_prod_load.json_][ProdLoad] and [_prod_load_init.json_][ProdLoadInit].
+[_prod_load.json_][product_load] and [_prod_load_init.json_][product_load_init].
 
 ```console
 --prepare-data[=init]
@@ -285,15 +287,15 @@ To run this example you need:
 #### 1.1. Loader configuration files
 See [_usecase/common/loader_](../usecase/common/loader) directory with preconfigured configuration files:
 
-* [_weather_store.json_][WeatherStore] — stores weather data for a specific date from a TSV file to the shared database.
-* [_weather_store_init.json_][WeatherStoreInit] — stores historical weather data from a TSV file to the shared database.
-* [_weather_qminer.json_][WeatherQMiner] — stores weather data for a specific date from a TSV file to raw weather data QMinerDB.
-* [_model_store_dupl.json_][ModelStore] — stores model configuration files to the shared database.
-* [_model_update.json_][ModelUpdate] — stores model configuration files to the shared database.
-* [_model_load.json_][ModelLoad] — loads models configurations from shared MariaDB to QMinerDB.
-* [_pred_store.json_][PredStore] — stores predictions to the shared database.
-* [_prod_load_init.json_][ProdLoadInit] — download products and products' states from the shared database.
-* [_prod_load.json_][ProdLoad] — download products and products' states for a specific date from the shared database.
+* [_weather_store.json_][weather_store] — stores weather data for a specific date from a TSV file to the shared database.
+* [_weather_store_init.json_][weather_store_init] — stores historical weather data from a TSV file to the shared database.
+* [_weather_qminer.json_][weather_qminer] — stores weather data for a specific date from a TSV file to raw weather data QMinerDB.
+* [_model_store_dupl.json_][model_store] — stores model configuration files to the shared database.
+* [_model_update.json_][model_update] — stores model configuration files to the shared database.
+* [_model_load.json_][model_load] — loads models configurations from shared MariaDB to QMinerDB.
+* [_pred_store.json_][prediction_store] — stores predictions to the shared database.
+* [_prod_load_init.json_][product_load_init] — download products and products' states from the shared database.
+* [_prod_load.json_][product_load] — download products and products' states for a specific date from the shared database.
 
 Note: Fill in database credentials.
 
@@ -319,7 +321,7 @@ Before fitting models and making predictions you need raw weather data and weath
 In case the weather databases are not initialized, execute:
 
 ```console
-$ node ./analytics/runner.js --upload-weather=init --weather-transformations=init --conf=./usecase/example/analytics_runner.json
+node ./analytics/runner.js --upload-weather=init --weather-transformations=init --conf=./usecase/example/analytics_runner.json
 ```
 
 Obtaining weather data and extracting weather features are time-consuming operations.
@@ -328,7 +330,7 @@ To avoid executing latter operations again and again, use and update the latest 
 To update weather database with the new data execute:
 
 ```console
-$ node ./analytics/runner.js --date=<new_date> --upload-weather --weather-transformations=new --conf=./usecase/example/analytics_runner.json 
+node ./analytics/runner.js --date=<new_date> --upload-weather --weather-transformations=new --conf=./usecase/example/analytics_runner.json 
 ```
 
 If you want to update weather data on a date interval use [_analytics_runner.sh_](../scripts/analytics_runner.sh). See example in the [analytics runner section](#using-analytics_runnersh-script).
@@ -336,7 +338,7 @@ If you want to update weather data on a date interval use [_analytics_runner.sh_
 ### 3. Initial transformations and model fit
 
 ```console
-$ node ./analytics/runner.js ./usecase/example/models/init/ --transform-other=init --fit=init --prepare-models=upload --conf=./usecase/example/analytics_runner.json
+node ./analytics/runner.js ./usecase/example/models/init/ --transform-other=init --fit=init --prepare-models=upload --conf=./usecase/example/analytics_runner.json
 ```
 This command runs transformations on historical data using [_categories_transformations_init.json_](../usecase/example/transformations/categories_transformation_init.json) transformation configuration file and creates all models described in the [_usecase/example/models/init/_](../usecase/example/models/init). Directory `models_configs_dir`, given in the runner configuration file, is ignored.
 Finally, all models fit using historical data and its model configuration files.
@@ -350,7 +352,7 @@ Note: Transformations are performed once and are used for all models in the use-
 ### 4. Download recent data
 
 ```console
-$ node ./analytics/runner.js --update-data=init --conf=./usecase/example/analytics_runner.json
+node ./analytics/runner.js --update-data=init --conf=./usecase/example/analytics_runner.json
 ```
 This command downloads all records from `products` and `product_states` shared database tables. 
 Currently, using this command is use-case specific to the tables in the shared database. 
@@ -359,7 +361,7 @@ Note: You need to provide [_prod_load_init.json_](../usecase/common/loader/_prod
 
 ### 5. Transformations of recent data
 ```console
-$ node ./analytics/runner.js --transform-other --conf=./usecase/example/analytics_runner.json 
+node ./analytics/runner.js --transform-other --conf=./usecase/example/analytics_runner.json 
 ```
 
 This extracts all features from the newly obtained data.
@@ -367,12 +369,12 @@ This extracts all features from the newly obtained data.
 ### 6. Upload/update model configurations
 
 ```console
-$ node ./analytics/runner.js ./usecase/example/models/predict/ --prepare-models=upload --conf=./usecase/example/analytics_runner.json
+node ./analytics/runner.js ./usecase/example/models/predict/ --prepare-models=upload --conf=./usecase/example/analytics_runner.json
 ```
 Upload model configuration files to the shared database. If one exists, skip it.
 
 ```console
-$ node ./analytics/runner.js ./usecase/example/models/predict/ --prepare-models=update  --conf=./usecase/example/analytics_runner.json
+node ./analytics/runner.js ./usecase/example/models/predict/ --prepare-models=update  --conf=./usecase/example/analytics_runner.json
 ```
 Update model configuration files in the shared database. If one exists, replace it.
 
@@ -384,7 +386,7 @@ Make predictions on the new dataset and upload to the shared database — specif
 If we want to predict using the `input_extraction.params.search_query` in the model configuration file and predict on all extracted records at once, execute:
 
 ```console
-$ node ./analytics/runner.js --prepare-models=update --predict=conf--conf=./usecase/example/analytics_runner.json 
+node ./analytics/runner.js --prepare-models=update --predict=conf--conf=./usecase/example/analytics_runner.json 
 ```
 
 This queries all records using  `input_extraction` search query from the model configuration file.
@@ -392,8 +394,8 @@ Note, that parameter `input_extraction.params.search_query` must be set correctl
  
 In case, we would like to predict on date interval use the [_analytics_runner.sh_](#using-analyticsrunnersh-script) script:
 
-```
-$ bash ./scripts/analytics_runner.sh --interval <from> <to> --prepare-data --other-transformations --predict
+```console
+bash ./scripts/analytics_runner.sh --interval <from> <to> --prepare-data --other-transformations --predict
 ```
 
 The script extracts inputs for each date separately and predicts on each set. 
@@ -407,11 +409,11 @@ Script [_analytics_runner.sh_](../scripts/analytics_runner.sh) wraps similar com
 For example, if we would like to update raw weather QMinerDB and calculate new weather transformations between dates `<from>` and `<to>`, we can run:
 
 ```console
-$ bash ./scripts/analytics_runner.sh --interval <from> <to> --upload-weather --weather-transformations=new
+bash ./scripts/analytics_runner.sh --interval <from> <to> --upload-weather --weather-transformations=new
 ```
 or shortly:
 ```console
-$ bash ./scripts/analytics_runner.sh --interval <from> <to> --weather
+bash ./scripts/analytics_runner.sh --interval <from> <to> --weather
 ```
 
 For more shortcuts see [_analytics_runner.sh_](../scripts/analytics_runner.sh).
@@ -420,14 +422,14 @@ The script runs [_runner.js_](./runner.js) separately for each date between `<fr
 
 Similarly, we can use [_analytics_runner.sh_](../scripts/analytics_runner.sh) script to run other supported commands that use `--date` parameter.
 
-[Pipeline]:./pipeline/README.md
-[Loader]:./loader/README.md
-[WeatherStore]:../usecase/common/loader/weather_store.json
-[WeatherStoreInit]:../usecase/common/loader/weather_store_init.json
-[WeatherQMiner]:../usecase/common/loader/weather_qminer.json
-[ModelStore]:../usecase/common/loader/model_store_dupl.json
-[ModelUpdate]:../usecase/common/loader/model_update.json
-[ModelLoad]:../usecase/common/loader/model_load.json
-[PredStore]:../usecase/common/loader/pred_store.json
-[ProdLoadInit]:../usecase/common/loader/prod_load_init.json
-[ProdLoad]:../usecase/common/loader/prod_load.json
+[pipeline]:./pipeline/README.md
+[loader]:./loader/README.md
+[weather_store]:../usecase/common/loader/weather_store.json
+[weather_store_init]:../usecase/common/loader/weather_store_init.json
+[weather_qminer]:../usecase/common/loader/weather_qminer.json
+[model_store]:../usecase/common/loader/model_store_dupl.json
+[model_update]:../usecase/common/loader/model_update.json
+[model_load]:../usecase/common/loader/model_load.json
+[prediction_store]:../usecase/common/loader/pred_store.json
+[product_load_init]:../usecase/common/loader/prod_load_init.json
+[product_load]:../usecase/common/loader/prod_load.json

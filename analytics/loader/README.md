@@ -2,21 +2,25 @@
 
 The data loading module transports data from different sources into various databases.
 Four types of sources are currently supported: [ArangoDB][ArangoDB], [MariaDB][MariaDB], 
-[Qminer base][QMBase] and a comma-separated values (CSV) file. 
-And three types of destination databases: MariaDB, ArangoDB and Qminer base.
+[QMiner base][QMBase] and a comma-separated values (CSV) file. 
+And three types of destination databases: MariaDB, ArangoDB and QMiner base.
 The entire transfer operation is specified in a configuration JSON which is given to the module 
 `data_loader.js` as parameter `-d <configuration_file_path>`.
 
+## Install
+
+See [pipeline's installation guide](../pipeline/README.md#install).
+
 ## Configurations
 The configuration file is provided to move data from source to destination.
-First, the process connects to the source and destination. In the case, Qminer base is set as a destination all queries
+First, the process connects to the source and destination. In the case, QMiner base is set as a destination all queries
 are checked for `"use_schema"` flag and used to create new stores.
 Second, the queries are executed in the given order in the `"queries"` list. 
 Each query `"query_src.query"` collects records from one source and transfers them into a destination database store.
 Finally, the connections are closed.
 
 The configuration must be structured as follows:
-```
+```json
 {
     "source": { ... },
     "destination": { ... },
@@ -33,7 +37,7 @@ These top-level fields are described in the following table.
 
 #### Parameters
 
-| Name                | Type                | Required | Description                                                 |
+| Parameter                | Type                | Required | Description                                                 |
 | ------------------- |:------------------- |:-------- |:----------------------------------------------------------  |
 | source              | Object              | Yes      | Parameters to set up the source from which data will be loaded. [See details](#source-and-destination). |
 | destination         | Object              | Yes      | Parameters to set up the destination to which data will be stored. |
@@ -44,15 +48,15 @@ The source/destination parameters vary depending on the source/destination type.
 
 ### source and destination
 
-| Name                | Type                | Required   | Use case         | Description                                                 |
+| Parameter                | Type                | Required   | Use case         | Description                                                 |
 | ------------------- |:------------------- |:---------- |:---------------- |:----------------------------------------------------------  |
 | type                | String              | Yes | All               | Type of source/destination. Possible values: [`"Csv" `, `"QminerDB"`, `"ArangoDB"`, `"MariaDB"`]. |
 | host                | String              | Yes | MariaDB, ArangoDb | The hostname of the database you are connecting to.         |
 | database            | String              | Yes | MariaDB, ArangoDb | Name of the database to use in these queries.               |
 | user                | String              | Yes | MariaDB, ArangoDb | The user to authenticate as.                                |
 | password            | String              | Yes | MariaDB, ArangoDb | The password of that user.                                  |
-| db_path             | String              | Yes | Qminer base       | The path to Qminer db directory.                            |
-| mode                | String              | No  | Qminer base       | Base access mode. Default is `"openReadOnly"`. Access modes are the same as described in [Qminer base constructor][QMBaseConstr], with additional `"extend"` option, which appends new schemas, defined in `queries`, to existing Qminer db. |
+| db_path             | String              | Yes | QMiner base       | The path to QMiner db directory.                            |
+| mode                | String              | No  | QMiner base       | Base access mode. Default is `"openReadOnly"`. Access modes are the same as described in [QMiner base constructor][QMBaseConstr], with additional `"extend"` option, which appends new schemas, defined in `queries`, to existing QMiner db. |
 | dir                 | String              | No  | Csv               | Directory in which CSV file is placed. |
 | filename            | String              | Yes | Csv               | Filename or filepath to CSV file. Relative path from `"dir"` if defined. |
 | custom_fn_path      | String              | No  | Csv               | Filename or filepath to file with custom functions. |
@@ -61,25 +65,25 @@ The source/destination parameters vary depending on the source/destination type.
 ### queries
 Parameter `queries` has a list of queries where a query is defined with the following parameters:
 
-| Name                | Type                | Required | Use case        | Description                                                 |
+| Parameter                | Type                | Required | Use case        | Description                                                 |
 | ------------------- |:------------------- |:---------|:------------ |:----------------------------------------------------------  |
 | name                | String              | Yes | All               | Name of the query. Note: When using ArangoDB as a source and query_src is not provided, this name is used as collection name to get all documents. |
 | use_query           | Boolean             | Yes | All               | Flag to use this query. |
-| use_schema          | Boolean             | Yes | All               | When Qminer base is used as destination and `"mode"` is set to `"createClean"`, `"create"` or `"extend"`, this flag indicates to use schema, defined in `"mapping.schema"`, to build a new store in Qminer base. |
-| query_src           | Object              | Yes | MariaDB, ArangoDb, Qminer, Csv (optional) | Object with parameters to query source. |
+| use_schema          | Boolean             | Yes | All               | When QMiner base is used as destination and `"mode"` is set to `"createClean"`, `"create"` or `"extend"`, this flag indicates to use schema, defined in `"mapping.schema"`, to build a new store in QMiner base. |
+| query_src           | Object              | Yes | MariaDB, ArangoDb, QMiner, Csv (optional) | Object with parameters to query source. |
 | query_dst           | Object              | Yes | MariaDB or ArangoDb as a destination | Object with parameters to query destination. |
-| mapping             | List                | Yes | Qminer base as a destination | List of objects used for mapping. [See Mapping](#Mapping). |
-| schema              | List                | Yes | Qminer base as a destination | Store schema definitions to be created in Qminer base if flag `"use_schema"` is set. The definition of `"schema"` is the same as in [Qminer store schema definition][QMStore].
+| mapping             | List                | Yes | QMiner base as a destination | List of objects used for mapping. [See Mapping](#Mapping). |
+| schema              | List                | Yes | QMiner base as a destination | Store schema definitions to be created in QMiner base if flag `"use_schema"` is set. The definition of `"schema"` is the same as in [QMiner store schema definition][QMStore].
 
 #### query_src and query_dst
 Querying different sources and destinations varies from case to case. 
 
 Parameters:
 
-| Name                | Type                | Required | Use case         | Description                                                 |
+| Parameter                | Type                | Required | Use case         | Description                                                 |
 | ------------------- |:------------------- |:---------|:---------------- |:----------------------------------------------------------  |
-| query               | String              | Yes | MaridaDB, ArangoDB    | Query string to query source or destination. [ArangoDB query language][AQL] or SQL string. |
-| placeholder_mapping | String              | No  | MaridaDB, ArangoDB    | Values from collected records to be mapped to values in a query. Note: In case you want to use fixed value for all records to be stored, place `{"mode": "fixed", "value":<value_you_want>}` on desired position. |
+| query               | String              | Yes | MariaDB, ArangoDB    | Query string to query source or destination. [ArangoDB query language][AQL] or SQL string. |
+| placeholder_mapping | String              | No  | MariaDB, ArangoDB    | Values from collected records to be mapped to values in a query. Note: In case you want to use fixed value for all records to be stored, place `{"mode": "fixed", "value":<value_you_want>}` on desired position. |
 | read_line_fn        | String              | No  | Csv                   | Name of the custom function.                                |
 | read_line_fn_args   | List                | No  | Csv                   | Additional arguments to custom function.                    |
 
@@ -130,8 +134,8 @@ Example:
 
 Result of this query are all documents/records from *slovenia-weather*.
 
-##### Qminer base
-Querying records from Qminer store is done with [Qminer query language][QmQuery]. Example:
+##### QMiner base
+Querying records from QMiner store is done with [QMiner query language][QMQuery]. Example:
 ```json
 {
     "query_src": {
@@ -150,11 +154,11 @@ in the name of the source column.
 
 Parameters:
 
-| Name                | Type                | Required | Description                                                 |
+| Parameter                | Type                | Required | Description                                                 |
 | ------------------- |:------------------- |:---------|:----------------------------------------------------------|
-| name                | String              | Yes      | Name of the store in Qminer base. |
-| fields              | Object              | Yes      | Mapping object. Each key is set to name of the source column and value is set to suitable Qminer store field [String]. In case of needing additional parameters, value can also be an object [Object]. |
-| fields.<source_column>.name               | String   | No       | Name of the Qminer store field.                  |
+| name                | String              | Yes      | Name of the store in QMiner base. |
+| fields              | Object              | Yes      | Mapping object. Each key is set to name of the source column and value is set to suitable QMiner store field [String]. In case of needing additional parameters, value can also be an object [Object]. |
+| fields.<source_column>.name               | String   | No       | Name of the QMiner store field.                  |
 | fields.<source_column>.null_values        | List     | No       | Values that are mapped as null values.      |
 
 For example, if we have schema defined as
@@ -202,15 +206,15 @@ The standard QMiner field specification object is wrapped in an object with the 
 ### misc
 Currently, miscellaneous options only control the logging verbosity.
 
-| Name                | Type                | Required                | Description                                                 |
+| Parameter                | Type                | Required                | Description                                                 |
 | ------------------- |:------------------- |:----------------------- |:----------------------------------------------------------  |
 | verbose             | Boolean             | No                      | Verbose logging. Default: `false`                     |
 
 
 ## Examples
 
-### CSV to Qminer base
-A simple example to load weather data from CSV file to Qminer base:
+### CSV to QMiner base
+A simple example to load weather data from CSV file to QMiner base:
 ```json
 {
     "source": {
@@ -270,7 +274,7 @@ A simple example to load weather data from CSV file to Qminer base:
     }
 }
 ```
-In this example, the Qminer base is created and each line from CSV file is stored to Qminer store named "weather" according to defined mapping.
+In this example, the QMiner base is created and each line from CSV file is stored to QMiner store named "weather" according to defined mapping.
 
 ### CSV to MariaDB
 
@@ -350,7 +354,7 @@ In this example, data loader uses all lines from CSV file with the timestamp *20
 All records with `EventID == 1` in the `example` database have updated fields `Prediction = 1` and `Timestamp = "2018-06-15 14:34:00"`.
 Likewise, records with `EventID == 0`.
 
-### Qminer base to MariaDB
+### QMiner base to MariaDB
 
 ```json
 {
@@ -396,7 +400,7 @@ All records in the destination base are going to be updated with matching record
 The destination record will get source record's `prediction` and `timestamp`. However, `Weather` parameter 
 will be updated to `"good"` for all matching destination records.
 
-### MariaDB to Qminer base
+### MariaDB to QMiner base
 
 ```json
 {
@@ -472,7 +476,7 @@ will be updated to `"good"` for all matching destination records.
 }
 ```
 
-### ArangoDB to Qminer base
+### ArangoDB to QMiner base
 
 ```json
 {
@@ -556,5 +560,5 @@ will be updated to `"good"` for all matching destination records.
 [QMStore]:https://rawgit.com/qminer/qminer/master/nodedoc/module-qm.html#~SchemaDef
 [QMBaseConstr]:https://rawgit.com/qminer/qminer/master/nodedoc/module-qm.html#~BaseConstructorParam
 [QMBase]:https://rawgit.com/qminer/qminer/master/nodedoc/module-qm.Base.html
-[QmQuery]:https://github.com/qminer/qminer/wiki/Query-Language
+[QMQuery]:https://github.com/qminer/qminer/wiki/Query-Language
 [AQL]:https://docs.arangodb.com/devel/AQL/DataQueries.html
