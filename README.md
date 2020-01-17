@@ -1,6 +1,6 @@
 # EW-Shopp Data Analytics (ew-shopp-public)
 
-[![License](https://img.shields.io/badge/License-BSD%202--Clause-blue.svg)](./License) [![Node 10.18](https://img.shields.io/badge/node-10.18.1-blue.svg)](https://nodejs.org/docs/latest-v10.x/api/)  [![Python 3.6](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/) 
+[![License](https://img.shields.io/badge/License-BSD%202--Clause-blue.svg)](./LICENSE) [![Node 10.18](https://img.shields.io/badge/node-10.18.1-blue.svg)](https://nodejs.org/docs/latest-v10.x/api/)  [![Python 3.6](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/) 
 
 Public repository of the analytics tools for the [EW-Shopp project][ew_shopp_link]. The contents are organized by topic in subfolders containing the code and the corresponding documentation.    
 
@@ -13,7 +13,7 @@ Public repository of the analytics tools for the [EW-Shopp project][ew_shopp_lin
 
 # License    
 
-BSD-2-Clause: [LICENSE](./License).
+BSD-2-Clause: [LICENSE](./LICENSE).
  
 [er_link]: http://eventregistry.org/
 [ew_shopp_link]: https://www.ew-shopp.eu/
