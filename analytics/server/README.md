@@ -7,7 +7,6 @@ Prediction server exposing an API to get predictions from the models.
 See [pipeline's installation guide](../pipeline/README.md#install).
 
 ## Usage
-
 To start the prediction server run:
 
 ```console
@@ -58,13 +57,15 @@ Before running the server, prepare the server configuration file:
     "model": "<path_to_model_dir>"
 }
 ```
+
 with parameters:
+
 | Parameter                | Type                | Description            |
 | ------------------- |:-------- |:---------------------------------  |
 | host            | String              | Hostname. |
 | port  | String              | Port that server listens to.               |
 | security.key      | String             | Path to the private key of the server.   |
-| security.cert      | String             | Path to the certificate containing public key.   |
+| security.cert      | String             | Path to the certificate containing the public key.   |
 | model      | String             | Path to the model's directory.   |
 ## API
 ### Predictions with search query (POST /predict)
@@ -171,7 +172,7 @@ Part of the sending data:
 ### Predictions with features (POST /predict)
 
 Send features to the prediction server and get predictions.
-Firstly [retrieve scheme](#scheme-of-the-feature-space-get-schema) of the model's feature store, to properly define request's records.
+Firstly, [retrieve scheme](#scheme-of-the-feature-space-get-schema) of the model's feature store, to define the request's records correctly.
 
 #### Parameters
 
@@ -179,15 +180,21 @@ Firstly [retrieve scheme](#scheme-of-the-feature-space-get-schema) of the model'
 | ------------------------ |:------------------- | --------------- |
 | data            | Object               | Data to be processed. |
 | data.records  | Object               | Object with `FtrSpace` and `InputFeat` parameters. |
-| data.records.FtrSpace      | List              | Feature values for every interested record (e.g. `[{<feat_name_1>: <feat_value_1>, <feat_name_2>: <feat_value_2>, ...},{<record_feat_2>}]`)  |
+| data.records.FtrSpace      | List              | Feature values for every interested record (e.g. `[{<feat_name_1>: <feat_value_1>, <feat_name_2>: <feat_value_2>, ...},{ <record_feat_2> }, ...]`)  |
 | data.records.InputFeat | List        | Record's private key names and values. Records should be in the same order as features in `data.records.FtrSpace`. |
 
 
 **Example Request:**
 
-See [query request example](templates/query_request_example.json).
+```console
+curl -k --location --request POST 'https://127.0.0.1:1337/predict' \
+--header 'Content-Type: application/json' \
+--data-raw @query_request_example
+```
 
-Example query requests can be generated using [script](gen_query_file.js):
+using [@query_request_example](templates/query_request_example.json).
+
+Example query requests can be generated using the [script](gen_query_file.js):
 
 ```console
 node analytics/server/gen_query_file.js -d "../data/models/ExampleModelv0.1" -o "./query_request_example.json"
@@ -225,7 +232,19 @@ node analytics/server/gen_query_file.js -d "../data/models/ExampleModelv0.1" -o 
 
 Get schema of the model's feature store, to correctly define the request's records of the [POST /predict request](#predictions-with-features-post-predict).
 
-#### Result's parameters
+**Example Request:**
+
+```console
+curl -k --location --request GET 'https://127.0.0.1:1337/schema' \
+--header 'Content-Type: application/json'
+```
+
+**Example Response:**
+
+See [scheme response](templates/scheme_response_example.json).
+
+#### Response parameters
+
 | Parameter                | Type                | Description    |
 | ------------------------ |:------------------- |:-------------  |
 | data            | Object               | Data to be processed. |
@@ -233,10 +252,6 @@ Get schema of the model's feature store, to correctly define the request's recor
 | data.scheme[0].fields | List             | List of fields' parameters, such as name and type. |
 | data.scheme[1].name | String             | Name of the store. It should be **InputFeat**.   |
 | data.scheme[1].fields | List             | List of fields' parameters, such as name and type. |
-
-**Example Response:**
-
-See [scheme response](templates/scheme_response_example.json).
 
 ## Server security
 
