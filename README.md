@@ -5,6 +5,7 @@
 Public repository of the analytics tools for the [EW-Shopp project][ew_shopp_link]. The contents are organized by topic in subfolders containing the code and the corresponding documentation.    
 
 * 📈 [analytics](analytics/) - code to set up, fit and run the EW-Shopp analytics pipeline. 
+    * 📤 [server](analytics/server/) - exposes an API to get predictions from the models. 
     * ⚙️ [pipeline](analytics/pipeline/) - to perform feature transformation, feature selection, model training and predictions.    
     * 🌍 [events](analytics/events/) - code to download articles and events from [Event Registry][er_link] and calculate media attention features. Used with the pipeline.    
     * 🌦️ [weather](analytics/weather/) - code to calculate weather features. Used with the pipeline. 

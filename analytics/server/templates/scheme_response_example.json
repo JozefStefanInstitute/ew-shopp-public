@@ -1,0 +1,503 @@
+{
+    "data": {
+        "scheme": [
+            {
+                "name": "FtrSpace",
+                "fields": [
+                    {
+                        "name": "span_max_2d_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_2d_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_2d_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_2d_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_2d_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_2d_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_2d_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_2d_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_2d_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_2d_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_2d_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_2d_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_2t_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_2t_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_2t_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_2t_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_2t_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_2t_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_2t_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_2t_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_2t_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_2t_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_2t_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_2t_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_sd_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_sd_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_sd_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_sd_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_sd_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_sd_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_sd_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_sd_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_sd_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_sd_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_sd_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_sd_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_sp_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_sp_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_sp_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_sp_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_sp_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_sp_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_sp_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_sp_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_sp_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_sp_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_sp_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_sp_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_tcc_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_tcc_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_tcc_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_tcc_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_tcc_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_tcc_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_tcc_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_tcc_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_tcc_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_tcc_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_tcc_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_tcc_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_ws_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_ws_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_ws_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_ws_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_ws_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_ws_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_ws_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_ws_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_ws_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_ws_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_ws_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_ws_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_rh_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_rh_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_rh_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_rh_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_rh_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_rh_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_rh_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_rh_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_max_rh_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_min_rh_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_mean_rh_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_diff_rh_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_sund_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_sund_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_sund_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_tp_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_tp_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_tp_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_ssr_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_ssr_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_ssr_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_sf_daterange3_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_sf_daterange2_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    },
+                    {
+                        "name": "span_total_sf_daterange1_0_timerange0_23__r20228",
+                        "type": "float",
+                        "null": false
+                    }
+                ],
+                "keys": []
+            },
+            {
+                "name": "InputFeat",
+                "fields": [
+                    {
+                        "name": "Timestamp",
+                        "type": "datetime",
+                        "null": false
+                    }
+                ],
+                "keys": []
+            }
+        ]
+    }
+}

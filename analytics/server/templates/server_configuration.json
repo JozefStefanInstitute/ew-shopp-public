@@ -1,0 +1,9 @@
+{
+    "host": "localhost",
+    "port": 1337,
+    "security": {
+        "key": "<path>.key",
+        "cert": "<path>.cert"
+    },
+    "pipeline": "<path_to_model_dir>"
+}

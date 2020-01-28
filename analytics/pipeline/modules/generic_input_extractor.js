@@ -4,6 +4,12 @@ const qm = require("qminer");
 const assert = require("assert");
 const utils = require("../../util/utils");
 
+/*
+* Instance of input database.
+* Can be kept alive after the first execution.
+* This is safe, because it is opened in 'openReadOnly' mode.
+ */
+let inputBase;
 
 function createNewStore(base, store, params) {
     assert.ok("input" in params);
@@ -37,7 +43,9 @@ function createNewStore(base, store, params) {
 }
 
 function exec(params, base) {
-    const inputBase = new qm.Base({ mode: "openReadOnly", dbPath: params["input_db"] });
+    if (inputBase == null || inputBase.isClosed()) {
+        inputBase = new qm.Base({ mode: "openReadOnly", dbPath: params["input_db"] });
+    }
     let recs, inputStore;
 
     // Set search query corresponding to the mode ({fit|predict})
@@ -74,6 +82,7 @@ function exec(params, base) {
         minVal = Math.abs(Math.min(...recs.getVector(params["target_var"]).toArray()));
         console.log(minVal);
     }
+
     recs.each(r => {
         let rec = {
             /*
@@ -89,12 +98,12 @@ function exec(params, base) {
 
         // Primary key mapping
         fields.forEach(field => {
-            if(field.name === "Value"){
+            if (field.name === "Value") {
                 rec[field.name] = targetVal;
             } else {
                 rec[field.name] = r[field.name];
                 if (field.name === "Timestamp" && params["forecast_offset"]) {
-                    rec[field.name]  = utils.addDays(rec[field.name] , params["forecast_offset"]);
+                    rec[field.name] = utils.addDays(rec[field.name], params["forecast_offset"]);
                 }
             }
         });
@@ -117,7 +126,9 @@ function exec(params, base) {
         }
     });
 
-    inputBase.close();
+    if (params["keep_alive_db"] === false) {
+        inputBase.close();
+    }
 }
 
 module.exports = { exec };
