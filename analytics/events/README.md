@@ -31,7 +31,7 @@ However, you can define queries and download EventRegistry data using [EventRegi
 To download interested events from EventRegistry and calculate media attention features run:
 
 ```console
-node analytics/pipeline/pipeline_runner.js -m transform -d ./events/config/media_attention_example.json
+node analytics/pipeline/pipeline_runner.js -m transform -d analytics/events/config/media_attention_example.json
 ```
 
 using JSON configuration file for media attention feature transformation:
@@ -214,6 +214,7 @@ Future signal:
 
 
 [er_link]: http://eventregistry.org/
+<<<<<<< HEAD
 
 ## Enrichment API
 Server exposing an API to enrich given dates with event features.
@@ -309,3 +310,5 @@ If the query executes successfully, response has the following format:
 }
 ```
 Field **data** stores features for each date in the order given by **dates** field on request.
+=======
+>>>>>>> 68b03b902d6e15ee103eb18187c5b093f7816c94
