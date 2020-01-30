@@ -214,3 +214,98 @@ Future signal:
 
 
 [er_link]: http://eventregistry.org/
+
+## Enrichment API
+Server exposing an API to enrich given dates with event features.
+
+### Server configuration file
+Before running the server, prepare the server configuration file:
+```json
+{
+    "host": "localhost",
+    "port": 1337,
+    "input_db": "<path_to_eventsFeaturesDb>"
+}
+```
+
+The configuration file template is located at [analytics/events/templates/server_configuration.json](templates/server_configuration.json).
+
+with parameters:
+
+| Parameter                | Type                | Description            |
+| ------------------- |:-------- |:---------------------------------  |
+| host            | String              | Hostname. |
+| port  | String              | Port that server listens to.               |
+| input_db      | String             | Path to the QMiner DB containing event features.   |
+
+### Running the server
+Once the configuration file is prepared, you can start the server with:
+
+```console
+node analytics/server/server.js -c analytics/server/templates/server_configuration.json
+```
+
+### Submitting a request (POST /enrich)
+```json
+{ 
+    "forecast_offset": -1, 
+    "features": [
+        "EventsCounts", 
+        "ArticlesCounts"
+    ], 
+    "dates": ["2017-02-01", "2017-02-03"] 
+}
+```
+
+Request has the following fields which are described in more detail in the sections above.
+
+| Field                | Type                 | Description     |
+| ------------------- |:------------------|:----------------------  |
+| forecast_offset            | Integer               | Forecast offset (same as in the **Feature Selection** section). |
+| features  | List                |  Features to be retrieved for each date (same as in the **Feature Selection** section). |
+| dates  | List | Dates to be enriched in "YYYY-MM-DD" format. |
+
+**Example:**
+```bash
+curl --header "Content-Type: application/json" \
+  --request POST  'http://127.0.0.1:1337/enrich' \
+  --data '{ 
+        "forecast_offset": -1, 
+        "features": [
+            "EventsCounts", 
+            "ArticlesCounts"
+        ], 
+        "dates": ["2017-02-01", "2017-02-03"] 
+    }' 
+```
+
+### Getting a response
+If the query executes successfully, response has the following format:
+
+```json
+{
+    "data":
+    [   
+        {
+            "EventsCounts":17,
+            "ArticlesCounts":72,
+            "EventsCountsPastAvg":17.714285714285715,
+            "ArticlesCountsPastAvg":65.42857142857143,
+            "EventsCountsPastMin":12,
+            "EventsCountsPastMax":27,
+            "ArticlesCountsPastMax":84,
+            "ArticlesCountsPastMin":38
+        },{
+            "EventsCounts":28,
+            "ArticlesCounts":91,
+            "EventsCountsPastAvg":19.571428571428573,
+            "ArticlesCountsPastAvg":76.28571428571429,
+            "EventsCountsPastMin":12,
+            "EventsCountsPastMax":28,
+            "ArticlesCountsPastMax":91,
+            "ArticlesCountsPastMin":49
+        }
+    ]
+}
+```
+Field **data** stores features for each date in the order given by **dates** field on request.
