@@ -223,7 +223,7 @@ Before running the server, prepare the server configuration file:
 ```json
 {
     "host": "localhost",
-    "port": 1337,
+    "port": 1338,
     "input_db": "<path_to_eventsFeaturesDb>"
 }
 ```
@@ -268,7 +268,7 @@ Request has the following fields which are described in more detail in the secti
 **Example:**
 ```bash
 curl --header "Content-Type: application/json" \
-  --request POST  'http://127.0.0.1:1337/enrich' \
+  --request POST  'http://127.0.0.1:1338/enrich' \
   --data '{ 
         "forecast_offset": -1, 
         "features": [
