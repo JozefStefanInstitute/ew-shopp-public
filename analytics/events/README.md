@@ -214,7 +214,6 @@ Future signal:
 
 
 [er_link]: http://eventregistry.org/
-<<<<<<< HEAD
 
 ## Enrichment API
 Server exposing an API to enrich given dates with event features.
@@ -310,5 +309,3 @@ If the query executes successfully, response has the following format:
 }
 ```
 Field **data** stores features for each date in the order given by **dates** field on request.
-=======
->>>>>>> 68b03b902d6e15ee103eb18187c5b093f7816c94
