@@ -309,3 +309,53 @@ If the query executes successfully, response has the following format:
 }
 ```
 Field **data** stores features for each date in the order given by **dates** field on request.
+
+### Selecting the keyword
+
+In case there are multiple keywords in the **eventsFeaturesDb**, you can select one using 
+the **search_query** field as in the **Feature selection** section above.
+
+This is set to **"Association football"** keyword by default.
+
+
+```json
+"search_query": {
+    "$from": "EventsFeatures",
+    "EventFeatureId": "FootballGermany"
+}
+```
+
+The **EventFeatureId** should match the **event_feature_id** field used at the **Feature transformation** step.
+The example request for enriching the dates with ***"Association football"*** keyword:
+
+```json
+{ 
+    "forecast_offset": -1, 
+    "search_query": {
+        "$from": "EventsFeatures",
+        "EventFeatureId": "FootballGermany"
+    },
+    "features": [
+        "EventsCounts", 
+        "ArticlesCounts"
+    ], 
+    "dates": ["2017-02-01", "2017-02-03"] 
+}
+```
+
+and the example for enriching the dates with ***"Music"*** keyword:
+
+```json
+{ 
+    "forecast_offset": -1, 
+    "search_query": {
+        "$from": "EventsFeatures",
+        "EventFeatureId": "MusicGermany"
+    },
+    "features": [
+        "EventsCounts", 
+        "ArticlesCounts"
+    ], 
+    "dates": ["2017-02-01", "2017-02-03"] 
+}
+```
