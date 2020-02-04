@@ -242,7 +242,7 @@ with parameters:
 Once the configuration file is prepared, you can start the server with:
 
 ```console
-node analytics/server/server.js -c analytics/server/templates/server_configuration.json
+node analytics/events/server.js -c analytics/events/templates/server_configuration.json
 ```
 
 ### Submitting a request (POST /enrich)
