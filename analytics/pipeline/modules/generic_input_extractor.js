@@ -5,11 +5,18 @@ const assert = require("assert");
 const utils = require("../../util/utils");
 
 /*
-* Instance of input database.
-* Can be kept alive after the first execution.
-* This is safe, because it is opened in 'openReadOnly' mode.
+ * Instance of input database.
+ * Can be kept alive after the first execution.
+ * This is safe, because it is opened in 'openReadOnly' mode.
  */
 let inputBase;
+
+function openInputExtractionDb(path) {
+    if (inputBase == null || inputBase.isClosed()) {
+        inputBase = new qm.Base({ mode: "openReadOnly", dbPath: path });
+    }
+    return inputBase;
+}
 
 function createNewStore(base, store, params) {
     assert.ok("input" in params);
@@ -43,9 +50,8 @@ function createNewStore(base, store, params) {
 }
 
 function exec(params, base) {
-    if (inputBase == null || inputBase.isClosed()) {
-        inputBase = new qm.Base({ mode: "openReadOnly", dbPath: params["input_db"] });
-    }
+
+    openInputExtractionDb(params["input_db"]);
     let recs, inputStore;
 
     // Set search query corresponding to the mode ({fit|predict})
@@ -131,4 +137,4 @@ function exec(params, base) {
     }
 }
 
-module.exports = { exec };
+module.exports = { exec, openInputExtractionDb };

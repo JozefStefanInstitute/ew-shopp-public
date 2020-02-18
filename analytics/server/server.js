@@ -39,24 +39,33 @@ if (utils.existsDir(serverConf.pipeline)) {
 } else if (utils.existsDir(MODELS_DIR + serverConf.pipeline)) {
     pipelinePath = MODELS_DIR + serverConf.pipeline;
 } else {
-    throw new Error("💥 Path to model '" + serverConf.pipeline + "'does not exist!");
+    throw new Error("💥 Path to model '" + serverConf.pipeline + "' does not exist!");
 }
-console.log("Using model '"+pipelinePath+"'!");
+console.log("Using model '" + pipelinePath + "'!");
+
+let pipelineConfigOrg = utils.loadFromJson(pipelinePath + "/pipeline-fit-init.json");
 let baseIn;
 
 
-async function openInputDatabase(path) {
+async function openInputDatabase(path, moduleName = null) {
     if (baseIn == null || baseIn.isClosed()) {
         if (!utils.existsDir(path)) {
             baseIn = new qm.Base({ dbPath: path + "/db" });
-            console.warn("⚠ Input extraction base '" +
+            console.warn("⚠ Input extraction database '" +
                 path + "' does not exist! Using model's database!");
         } else {
-            baseIn = new qm.Base({ dbPath: path });
-            console.log("Input extraction base found!");
+            if (module != null) {
+                // Load input module
+                let inputExtractionModule = runner.loadModule(moduleName);
+                // Open input database - faster query response if using search query
+                baseIn = inputExtractionModule.openInputExtractionDb(path);
+            } else {
+                baseIn = new qm.Base({ dbPath: path });
+            }
+            console.log("Input database found!");
         }
     } else {
-        console.log("Input already opened!");
+        console.log("Input database already opened!");
     }
 }
 
@@ -123,14 +132,14 @@ async function updatePipelineConfig(pipelineConfig, serverConfig, requestParams)
     // If input extraction base does not exist any more use model base!
     const inputExtractionParams = pipelineConfig.input_extraction.params;
     const baseInPath = requestParams.input_db || inputExtractionParams.input_db;
-    await openInputDatabase(baseInPath);
+    await openInputDatabase(baseInPath, pipelineConfig.input_extraction.module);
     let storeNameIn = await getInputStoreName(baseIn, inputExtractionParams);
     let query = await getSearchQuery(storeNameIn, requestParams);
 
     // Update pipeline configuration file to use final search query
     delete pipelineConfig.mode;
-    pipelineConfig.input_extraction.params.search_query = query;
-    pipelineConfig.input_extraction.params.keep_alive_db = true;
+    inputExtractionParams.search_query = query;
+    inputExtractionParams.keep_alive_db = true;
 
     return pipelineConfig;
 }
@@ -161,7 +170,8 @@ function getModelScheme(base, stores) {
 
 async function getPredictions(req) {
     let queryBase = undefined, mode = "predict";
-    let pipelineConfig = utils.loadFromJson(pipelinePath + "/pipeline-fit-init.json");
+    // Make local copy of original pipeline configuration
+    let pipelineConfig = JSON.parse(JSON.stringify(pipelineConfigOrg));
     if (req.body.data.search_query) {
 
         // Prediction with search query
@@ -169,7 +179,6 @@ async function getPredictions(req) {
         pipelineConfig = await updatePipelineConfig(pipelineConfig, serverConf, req.body.data);
 
     } else {
-
         // Prediction with feature space and input records
         console.log("Get predictions using feature space! 🌌");
 
@@ -190,7 +199,7 @@ async function getPredictions(req) {
 
     console.group("Running predictions 💤 ... ");
     let predictions = await runner.exec(pipelineConfig, mode, queryBase);
-    predictions = predictions.map(({$id, ...keepAttrs}) => keepAttrs);
+    predictions = predictions.map(({ $id, ...keepAttrs }) => keepAttrs);
     console.groupEnd();
 
     return predictions;
@@ -233,6 +242,8 @@ app.post("/predict", async (req, res) => {
 });
 
 
-https.createServer(sslOptions, app).listen(port, () => {
+https.createServer(sslOptions, app).listen(port, async () => {
+    const { params: { input_db: inputDb }, module: moduleName } = pipelineConfigOrg.input_extraction;
+    await openInputDatabase(inputDb, moduleName);
     console.log("🔥 Server is up! Listening on port " + port + "!")
 });

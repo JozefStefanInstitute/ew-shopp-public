@@ -234,8 +234,7 @@ function extraction(pipeline, base) {
         let transformer = loadModule(moduleInfo["module"]);
 
         let params = moduleInfo["params"];
-        params["output_store"] = moduleInfo["output_store"] ?
-            moduleInfo["output_store"] : moduleInfo["module"]; // !!!
+        params["output_store"] = params["output_store"] || moduleInfo["module"]; // !!!
         params["input"] = pipeline["pipeline"]["input"];
 
         let [features, featuresRecs] = transformer.exec(params, base);
@@ -366,4 +365,4 @@ function loadModule(modulePath) {
     return require(modulePath);
 }
 
-module.exports = { exec };
+module.exports = { exec, loadModule };

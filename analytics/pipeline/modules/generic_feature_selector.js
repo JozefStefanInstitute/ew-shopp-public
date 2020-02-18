@@ -44,8 +44,6 @@ function exec(params, base) {
         }
     }
 
-    console.log(usedFeatures);
-
     // Create feature store
     let featureStore = base.createStore({
         name: params["output_store"],

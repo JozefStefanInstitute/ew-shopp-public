@@ -52,6 +52,15 @@ function exec(params, base) {
             lines.sort((a, b) => {return a[params["sort_by"]] - b[params["sort_by"]]});
         }
 
+        if (params["sort_by"] != null) {
+            if (base.store(params["input_feat_store"]).fields.some(
+                ({ name, type }) => name === params["sort_by"] && type === "datetime")) {
+                lines.sort((a, b) => {return new Date(a[params["sort_by"]]) - new Date(b[params["sort_by"]])});
+            } else {
+                lines.sort((a, b) => {return a[params["sort_by"]] - b[params["sort_by"]]});
+            }
+        }
+
         // Write to file
         for (const line of lines) {
             let xVal = "";
