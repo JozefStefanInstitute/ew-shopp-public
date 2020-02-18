@@ -1,0 +1,5 @@
+{
+    "host": "localhost",
+    "port": 1338,
+    "input_db": "../data/usecase/common/features/eventsFeaturesDb"
+}
